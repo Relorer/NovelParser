@@ -12,6 +12,9 @@ namespace NovelParserBLL.FileGenerators.EPUB
             if (novel.Chapters == null) return;
 
             Document doc = new Document();
+            doc.BuiltinDocumentProperties.Author = novel.Author;
+            doc.BuiltinDocumentProperties.CreateDate = DateTime.Now;
+            doc.BuiltinDocumentProperties.Title = novel.NameRus;
 
             foreach (var item in novel.Chapters)
             {
@@ -21,6 +24,7 @@ namespace NovelParserBLL.FileGenerators.EPUB
                 titleParagraph.AppendText(string.IsNullOrEmpty(item.Name) ? $"Глава {item.Number}" : item.Name);
                 titleParagraph.Format.AfterSpacing = 10;
                 titleParagraph.Format.HorizontalAlignment = HorizontalAlignment.Center;
+                titleParagraph.ApplyStyle(BuiltinStyle.Heading1);
 
                 Paragraph bodyParagraph_1 = section.AddParagraph();
                 bodyParagraph_1.AppendHTML(item.Content ?? "");
@@ -28,8 +32,6 @@ namespace NovelParserBLL.FileGenerators.EPUB
                 bodyParagraph_1.Format.FirstLineIndent = 30;
                 bodyParagraph_1.Format.AfterSpacing = 10;
             }
-
-            
 
             if (novel.Chapters != null)
             {

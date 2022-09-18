@@ -31,5 +31,11 @@ namespace NovelParserBLL.Utilities
             return r.Replace(filename, replaceChar);
         }
 
+        public static void Empty(string directory)
+        {
+            System.IO.DirectoryInfo dir = new System.IO.DirectoryInfo(directory);
+            foreach (System.IO.FileInfo file in dir.GetFiles()) file.Delete();
+            foreach (System.IO.DirectoryInfo subDirectory in dir.GetDirectories()) subDirectory.Delete(true);
+        }
     }
 }

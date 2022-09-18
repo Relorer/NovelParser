@@ -9,7 +9,7 @@ namespace NovelParserBLL.Parsers.Ranobelib
 {
     internal class RanobelibParser : INovelParser
     {
-        private const string urlPattern = @"https:\/\/ranobelib.me\/([\s\S]+?)\/";
+        private const string urlPattern = @"https:\/\/ranobelib.me\/([\s\S]+?)[\/?]";
         private const string downloadedFileName = "RanobelibParserImg.jpg";
 
         private const string GetNovelInfoScript = """
@@ -95,7 +95,7 @@ namespace NovelParserBLL.Parsers.Ranobelib
             using (var driver = ChromeDriverHelper.StartChrome())
             {
                 driver.GoTo(chapter.Url);
-                chapter.Content = (string?)driver.ExecuteScript("return document.querySelector('.reader-container').innerHTML");
+                chapter.Content = (string?)driver.ExecuteScript("return document.querySelector('.reader-container')?.innerHTML");
             }
 
             if (chapter.Content != null && chapter.Content.Contains("img"))
@@ -120,14 +120,14 @@ namespace NovelParserBLL.Parsers.Ranobelib
         {
             novelName = FileSystemHelper.RemoveInvalidFilePathCharacters(novelName ?? "", "-");
             novelName = $"cover-{novelName}.jpg";
-            return !string.IsNullOrEmpty(url) && await DownloadImage(url, novelName) ? FullPathDownloadedFile(novelName) : "";
+            return !string.IsNullOrEmpty(url) && await DownloadImage(url, novelName) ? ChromeDriverHelper.GetDownloadedPath(novelName) : "";
         }
 
         private async Task<string> GetImageAsBase64Url(string url)
         {
             string result = "";
 
-            string fullPath = FullPathDownloadedFile(downloadedFileName);
+            string fullPath = ChromeDriverHelper.GetDownloadedPath(downloadedFileName);
 
             if (await DownloadImage(url, downloadedFileName))
             {
@@ -140,20 +140,17 @@ namespace NovelParserBLL.Parsers.Ranobelib
 
         private async Task<bool> DownloadImage(string url, string name)
         {
+            var fullPath = ChromeDriverHelper.GetDownloadedPath(name);
+            if (File.Exists(fullPath)) File.Delete(fullPath);
             using var driver = ChromeDriverHelper.StartChrome();
             driver.GoTo(url);
             driver.ExecuteScript(string.Format(DownloadImgScript, url, name));
             var attempt = 1;
-            while (!File.Exists(FullPathDownloadedFile(name)) || attempt < 4)
+            while (!File.Exists(fullPath) || attempt < 4)
             {
                 await Task.Delay(200 * attempt++);
             }
-            return File.Exists(FullPathDownloadedFile(name));
-        }
-
-        private string FullPathDownloadedFile(string name)
-        {
-            return Path.Combine("Downloads", name);
+            return File.Exists(ChromeDriverHelper.GetDownloadedPath(name));
         }
 
         public bool ValidateUrl(string url)
