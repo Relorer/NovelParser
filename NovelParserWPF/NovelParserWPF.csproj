@@ -5,10 +5,24 @@
     <TargetFramework>net6.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>Images\book.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="Images\book.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="HandyControls" Version="3.4.2" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\NovelParserBLL\NovelParserBLL.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Images\background.png" />
+    <Resource Include="Images\tempcover.jpg" />
   </ItemGroup>
 
 </Project>
