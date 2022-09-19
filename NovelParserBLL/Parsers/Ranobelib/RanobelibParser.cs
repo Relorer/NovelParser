@@ -7,43 +7,54 @@ using System.Text.RegularExpressions;
 
 namespace NovelParserBLL.Parsers.Ranobelib
 {
-    internal class RanobelibParser : INovelParser
+    public class RanobelibParser : INovelParser
     {
-        private const string urlPattern = @"https:\/\/ranobelib.me\/([\s\S]+?)[\/?]";
         private const string downloadedFileName = "RanobelibParserImg.jpg";
 
         private const string GetNovelInfoScript = """
-                                                    return JSON.stringify({
-                                                        NameRus: window.__DATA__.manga.rusName,
-                                                        NameEng: window.__DATA__.manga.engName,
-                                                        CoverUrl: (document.querySelector(`img[alt='${window.__DATA__.manga.name}']`) || document.querySelector("img.media-header__cover"))?.src,
-                                                        Author: document
-                                                            .querySelectorAll(".media-info-list__item")[document.querySelectorAll(".media-info-list__item").length === 9 ? 5 : 4]
-                                                            ?.children[1].textContent.trim(),
-                                                        Description: document
+                                                        return JSON.stringify({
+                                                            NameRus:
+                                                            window.__DATA__.manga.rusName ||
+                                                            window.__DATA__.manga.engName ||
+                                                            window.__DATA__.manga.slug,
+                                                            NameEng:
+                                                            window.__DATA__.manga.engName ||
+                                                            window.__DATA__.manga.rusName ||
+                                                            window.__DATA__.manga.slug,
+                                                            CoverUrl: (
+                                                            document.querySelector(`img[alt='${window.__DATA__.manga.name}']`) ||
+                                                            document.querySelector("img.media-header__cover")
+                                                            )?.src,
+                                                            Author:
+                                                            [...document.querySelectorAll(".media-info-list__item")]
+                                                                .find((item) => item.children[0].innerText === "Автор")
+                                                                ?.children[1].textContent.trim() ?? "No Author",
+                                                            Description: document
                                                             .querySelector(".media-description__text")
                                                             ?.textContent.trim(),
-                                                    });
+                                                        });
                                                   """;
 
         private const string GetChaptersScript = """
-                                                    return JSON.stringify(
-                                                        (window.__DATA__.chapters.branches.length > 0
+                                                    return (() => {
+                                                      const dict = {};
+                                                      (window.__DATA__.chapters.branches.length > 0
                                                         ? window.__DATA__.chapters.branches
-                                                        : [{ id: "nobranches" }]
-                                                        )
-                                                        .map((br) => br.id)
-                                                        .map((id) =>
-                                                            window.__DATA__.chapters.list
-                                                            .filter((ch) => ch.branch_id === id || id === "nobranches")
+                                                        : [{ id: "nobranches", name: "none" }]
+                                                      ).forEach(
+                                                        (br) =>
+                                                          (dict[br.name] = window.__DATA__.chapters.list
+                                                            .filter((ch) => ch.branch_id === br.id || br.id === "nobranches")
                                                             .map((ch) => ({
-                                                                Name: ch.chapter_name,
-                                                                Url: `https://ranobelib.me/${window.__DATA__.manga.slug}/v${ch.chapter_volume}/c${ch.chapter_number}`,
-                                                                Number: ch.chapter_number,
-                                                                Index: ch.index,
+                                                              Name: ch.chapter_name,
+                                                              Url: `https://ranobelib.me/${window.__DATA__.manga.slug}/v${ch.chapter_volume}/c${ch.chapter_number}`,
+                                                              Number: ch.chapter_number,
+                                                              Index: ch.index,
                                                             }))
-                                                        )
-                                                    );
+                                                            .reverse())
+                                                      );
+                                                      return JSON.stringify(dict);
+                                                    })();
                                                   """;
 
         private const string DownloadImgScript = """
@@ -52,22 +63,19 @@ namespace NovelParserBLL.Parsers.Ranobelib
                                                     a.download = "{1}";
                                                     a.click();
                                                   """;
+        private const string ranobelibUrl = "https://ranobelib.me/";
 
         private readonly HtmlParser parser = new HtmlParser();
 
-        public async Task<Novel> ParseAsync(string url)
+        public async Task<Novel> ParseAsync(string ranobeUrl)
         {
             Novel novel;
             using (var driver = ChromeDriverHelper.StartChrome())
             {
-                driver.GoTo(PrepareUrl(url));
+                driver.GoTo(PrepareUrl(ranobeUrl));
                 novel = JsonConvert.DeserializeObject<Novel>((string)driver.ExecuteScript(GetNovelInfoScript)) ?? new Novel();
 
-                List<List<Chapter>>? data = JsonConvert.DeserializeObject<List<List<Chapter>>>((string)driver.ExecuteScript(GetChaptersScript));
-
-                //TODO add selector
-                novel.Chapters = data?.MaxBy(d => d.Count) ?? new List<Chapter>();
-                novel.Chapters.Reverse();
+                novel.ChaptersByTranslationTeam = JsonConvert.DeserializeObject<Dictionary<string, List<Chapter>>>((string)driver.ExecuteScript(GetChaptersScript));
             }
 
             novel.CoverPath = await DownloadCover(novel.CoverUrl, novel.NameEng);
@@ -75,11 +83,12 @@ namespace NovelParserBLL.Parsers.Ranobelib
             return novel;
         }
 
-        public async Task ParseAndLoadChapters(Novel novel)
+        public async Task ParseAndLoadChapters(Novel novel, string translationTeam)
         {
-            if (novel.Chapters != null)
+            List<Chapter>? chapters;
+            if (novel.ChaptersByTranslationTeam != null && novel.ChaptersByTranslationTeam.TryGetValue(translationTeam, out chapters))
             {
-                foreach (var item in novel.Chapters)
+                foreach (var item in chapters)
                 {
                     if (string.IsNullOrEmpty(item.Content))
                     {
@@ -155,12 +164,12 @@ namespace NovelParserBLL.Parsers.Ranobelib
 
         public bool ValidateUrl(string url)
         {
-            return Regex.Match(url, urlPattern).Success;
+            return url.StartsWith(ranobelibUrl) && (url.IndexOf('?') < 0 || url.IndexOf('?') > ranobelibUrl.Length);
         }
 
         private string PrepareUrl(string url)
         {
-            return Regex.Match(url, urlPattern).Value;
+            return ranobelibUrl + Regex.Match(url.Substring(ranobelibUrl.Length), @"[^(?|\/)]*").Value;
         }
     }
 }

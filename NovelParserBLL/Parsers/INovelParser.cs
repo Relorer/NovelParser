@@ -2,11 +2,11 @@
 
 namespace NovelParserBLL.Parsers
 {
-    internal interface INovelParser
+    public interface INovelParser
     {
         public Task<Novel> ParseAsync(string url);
 
-        public Task ParseAndLoadChapters(Novel novel);
+        public Task ParseAndLoadChapters(Novel novel, string translationTeam);
 
     }
 }

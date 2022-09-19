@@ -7,16 +7,17 @@ namespace NovelParserBLL.FileGenerators.EPUB
 {
     internal class EpubFileGenerator : IFileGenerator
     {
-        public void Generate(string file, Novel novel)
+        public void Generate(string file, Novel novel, string translationTeam)
         {
-            if (novel.Chapters == null) return;
+            List<Chapter>? chapters;
+            if (novel.ChaptersByTranslationTeam == null || !novel.ChaptersByTranslationTeam.TryGetValue(translationTeam, out chapters)) return;
 
             Document doc = new Document();
             doc.BuiltinDocumentProperties.Author = novel.Author;
             doc.BuiltinDocumentProperties.CreateDate = DateTime.Now;
             doc.BuiltinDocumentProperties.Title = novel.NameRus;
 
-            foreach (var item in novel.Chapters)
+            foreach (var item in chapters)
             {
                 Section section = doc.AddSection();
                 section.PageSetup.Margins.All = 40f;
@@ -33,7 +34,7 @@ namespace NovelParserBLL.FileGenerators.EPUB
                 bodyParagraph_1.Format.AfterSpacing = 10;
             }
 
-            if (novel.Chapters != null)
+            if (novel.CoverPath != null)
             {
                 DocPicture cover = new DocPicture(doc);
                 cover.LoadImage(File.ReadAllBytes(novel.CoverPath!));

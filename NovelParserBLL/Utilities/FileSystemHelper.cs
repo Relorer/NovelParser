@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace NovelParserBLL.Utilities
 {
-    internal class FileSystemHelper
+    public class FileSystemHelper
     {
         public static void CopyFilesRecursively(string sourcePath, string targetPath)
         {
@@ -24,7 +24,7 @@ namespace NovelParserBLL.Utilities
             }
         }
 
-        public static string RemoveInvalidFilePathCharacters(string filename, string replaceChar)
+        public static string RemoveInvalidFilePathCharacters(string filename, string replaceChar = "")
         {
             string regexSearch = new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars());
             Regex r = new Regex(string.Format("[{0}]", Regex.Escape(regexSearch)));

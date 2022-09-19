@@ -1,6 +1,6 @@
 ﻿namespace NovelParserBLL.Models
 {
-    internal class Chapter
+    public class Chapter
     {
         public string Name { get; set; }
         public string Url { get; set; }
