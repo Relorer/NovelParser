@@ -3,12 +3,13 @@ using Newtonsoft.Json;
 using NovelParserBLL.Extensions;
 using NovelParserBLL.Models;
 using NovelParserBLL.Utilities;
+using OpenQA.Selenium.Chrome;
 using System.Drawing;
 using System.Text.RegularExpressions;
 
 namespace NovelParserBLL.Parsers.Ranobelib
 {
-    public class RanobelibParser : INovelParser
+    public class RanobelibParser
     {
         private const string downloadedFileName = "RanobelibParserImg.jpg";
 
@@ -44,15 +45,21 @@ namespace NovelParserBLL.Parsers.Ranobelib
                                                         : [{ id: "nobranches", name: "none" }]
                                                       ).forEach(
                                                         (br) =>
-                                                          (dict[br.name] = window.__DATA__.chapters.list
-                                                            .filter((ch) => ch.branch_id === br.id || br.id === "nobranches")
-                                                            .map((ch) => ({
-                                                              Name: ch.chapter_name,
-                                                              Url: `https://ranobelib.me/${window.__DATA__.manga.slug}/v${ch.chapter_volume}/c${ch.chapter_number}`,
-                                                              Number: ch.chapter_number,
-                                                              Index: ch.index,
-                                                            }))
-                                                            .reverse())
+                                                          (dict[br.name] = (() => {
+                                                            const chapter = {};
+                                                            window.__DATA__.chapters.list
+                                                              .filter((ch) => ch.branch_id === br.id || br.id === "nobranches")
+                                                              .forEach(
+                                                                (ch) =>
+                                                                  (chapter[ch.index] = {
+                                                                    Name: ch.chapter_name,
+                                                                    Url: `https://ranobelib.me/${window.__DATA__.manga.slug}/v${ch.chapter_volume}/c${ch.chapter_number}`,
+                                                                    Number: ch.chapter_number,
+                                                                    Index: ch.index,
+                                                                  })
+                                                              );
+                                                            return chapter;
+                                                          })())
                                                       );
                                                       return JSON.stringify(dict);
                                                     })();
@@ -64,49 +71,58 @@ namespace NovelParserBLL.Parsers.Ranobelib
                                                     a.download = "{1}";
                                                     a.click();
                                                   """;
+
+        private const string CheckChallengeRunningScript = """
+                                                    return JSON.stringify(document.querySelector("#challenge-running") !== null)
+                                                  """;
+
         private const string ranobelibUrl = "https://ranobelib.me/";
 
         private readonly HtmlParser parser = new HtmlParser();
 
         public async Task<Novel> ParseAsync(string ranobeUrl)
         {
-            Novel novel;
-            using (var driver = ChromeDriverHelper.StartChrome())
+            Novel novel = await Task.Run(async () =>
             {
-                driver.GoTo(PrepareUrl(ranobeUrl));
-                novel = JsonConvert.DeserializeObject<Novel>((string)driver.ExecuteScript(GetNovelInfoScript)) ?? new Novel();
+                Novel novel;
 
-                novel.ChaptersByTranslationTeam = JsonConvert.DeserializeObject<Dictionary<string, List<Chapter>>>((string)driver.ExecuteScript(GetChaptersScript));
-            }
+                using (var driver = await TryLoadPage(PrepareUrl(ranobeUrl)))
+                {
+                    novel = JsonConvert.DeserializeObject<Novel>((string)driver.ExecuteScript(GetNovelInfoScript)) ?? new Novel();
+
+                    novel.ChaptersByTranslationTeam = JsonConvert.DeserializeObject<Dictionary<string, SortedList<int, Chapter>>>((string)driver.ExecuteScript(GetChaptersScript));
+                }
+
+                return novel;
+            });
 
             novel.Cover = await DownloadCover(novel.CoverUrl, novel.NameEng);
 
             return novel;
         }
 
-        public async Task ParseAndLoadChapters(Novel novel, string translationTeam)
+        public Task ParseAndLoadChapters(SortedList<int, Chapter> chapters)
         {
-            List<Chapter>? chapters;
-            if (novel.ChaptersByTranslationTeam != null && novel.ChaptersByTranslationTeam.TryGetValue(translationTeam, out chapters))
+            return Task.Run(async () =>
             {
                 foreach (var item in chapters)
                 {
-                    if (string.IsNullOrEmpty(item.Content))
+                    if (string.IsNullOrEmpty(item.Value.Content))
                     {
-                        await ParseChapter(item);
+                        await ParseChapter(item.Value);
                     }
                 }
-            }
+            });
         }
 
         private async Task ParseChapter(Chapter chapter)
         {
             // open a new сhrome driver for each chapter to avoid blocking
-            using (var driver = ChromeDriverHelper.StartChrome())
+            using (var driver = await TryLoadPage(chapter.Url))
             {
-                driver.GoTo(chapter.Url);
                 chapter.Content = (string?)driver.ExecuteScript("return document.querySelector('.reader-container')?.innerHTML");
             }
+
 
             if (chapter.Content != null && chapter.Content.Contains("img"))
             {
@@ -161,8 +177,9 @@ namespace NovelParserBLL.Parsers.Ranobelib
         {
             var fullPath = ChromeDriverHelper.GetDownloadedPath(name);
             if (File.Exists(fullPath)) File.Delete(fullPath);
-            using var driver = ChromeDriverHelper.StartChrome();
-            driver.GoTo(url);
+
+            using var driver = await TryLoadPage(url);
+
             driver.ExecuteScript(string.Format(DownloadImgScript, url, name));
             var attempt = 1;
             while (!File.Exists(fullPath) || attempt < 4)
@@ -180,6 +197,33 @@ namespace NovelParserBLL.Parsers.Ranobelib
         private string PrepareUrl(string url)
         {
             return ranobelibUrl + Regex.Match(url.Substring(ranobelibUrl.Length), @"[^(?|\/)]*").Value;
+        }
+
+        private async Task<ChromeDriver> TryLoadPage(string url)
+        {
+            var driver = ChromeDriverHelper.StartChrome();
+            driver.GoTo(url);
+            var attempt = 1;
+
+            while (CheckChallengeRunning(driver))
+            {
+                driver.Dispose();
+
+                driver = ChromeDriverHelper.StartChrome();
+
+                driver.GoTo(url);
+
+                await Task.Delay(attempt++ * 2000);
+            }
+
+            await Task.Delay(attempt * 1000);
+
+            return driver;
+        }
+
+        private bool CheckChallengeRunning(ChromeDriver driver)
+        {
+            return JsonConvert.DeserializeObject<bool>((string)driver.ExecuteScript(CheckChallengeRunningScript));
         }
     }
 }

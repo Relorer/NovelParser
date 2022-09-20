@@ -10,6 +10,6 @@ namespace NovelParserBLL.Models
         public byte[]? Cover { get; set; }
         public string? Author { get; set; }
         public string? Description { get; set; }
-        public Dictionary<string, List<Chapter>>? ChaptersByTranslationTeam { get; set; }
+        public Dictionary<string, SortedList<int, Chapter>>? ChaptersByTranslationTeam { get; set; }
     }
 }

@@ -4,6 +4,7 @@ using DevExpress.Mvvm.DataAnnotations;
 using Microsoft.Win32;
 using NovelParserBLL.Extensions;
 using NovelParserBLL.FileGenerators;
+using NovelParserBLL.FileGenerators.EPUB;
 using NovelParserBLL.Models;
 using NovelParserBLL.Parsers.Ranobelib;
 using NovelParserBLL.Utilities;
@@ -12,7 +13,6 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -50,7 +50,7 @@ namespace NovelParserWPF.ViewModels
         [GenerateProperty]
         string selectedTranslationTeam = "";
 
-        public List<string> TranslationTeam => Novel?.ChaptersByTranslationTeam?.Keys.ToList() ?? new List<string>();
+        public List<string> TranslationTeams => Novel?.ChaptersByTranslationTeam?.Keys.ToList() ?? new List<string>();
 
         [GenerateProperty]
         string listChaptersPattern = "All";
@@ -69,16 +69,13 @@ namespace NovelParserWPF.ViewModels
         {
             NovelLoadingLock = true;
 
-            //wait ui update for lock
-            await Task.Delay(1000);
-
             if (Novel == null)
             {
                 await GetNovelInfo();
             }
             else
             {
-                await ParseNovel();
+                await ParseNovel(Novel);
             }
 
             NovelLoadingLock = false;
@@ -92,22 +89,24 @@ namespace NovelParserWPF.ViewModels
             {
                 string desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
                 SavePath = Path.Combine(desktop, FileSystemHelper.RemoveInvalidFilePathCharacters(Novel.NameEng));
-                SelectedTranslationTeam = TranslationTeam.First();
+                SelectedTranslationTeam = TranslationTeams.First();
             }
         }
 
-        private async Task ParseNovel()
+        private async Task ParseNovel(Novel novel)
         {
-
+            await ranobelib.ParseAndLoadChapters(ChaptersToDownload);
+            var extension = GetSelectedFileFormat() == FileFormatForGenerator.EPUB ? ".epub" : ".pdf";
+            await new EpubFileGenerator().Generate(SavePath + extension, novel, ChaptersToDownload);
         }
 
         [GenerateProperty]
         Novel? novel;
 
-        private List<Chapter>? chaptersCurrentTeam => Novel?.ChaptersByTranslationTeam?.GetValueOrDefault(SelectedTranslationTeam, new List<Chapter>());
+        private SortedList<int, Chapter>? chaptersCurrentTeam => Novel?.ChaptersByTranslationTeam?.GetValueOrDefault(SelectedTranslationTeam, new SortedList<int, Chapter>());
 
         public int TotalChapters => chaptersCurrentTeam?.Count ?? 0;
-        public int ChaptersToDownload => GetChaptersByPattern(ListChaptersPattern, chaptersCurrentTeam).Count();
+        public SortedList<int, Chapter> ChaptersToDownload => GetChaptersByPattern(ListChaptersPattern, chaptersCurrentTeam);
 
         [GenerateProperty]
         string savePath = "";
@@ -173,9 +172,9 @@ namespace NovelParserWPF.ViewModels
             };
         }
 
-        private IEnumerable<Chapter> GetChaptersByPattern(string pattern, List<Chapter>? chapters)
+        private SortedList<int, Chapter> GetChaptersByPattern(string pattern, SortedList<int, Chapter>? chapters)
         {
-            var result = new List<Chapter>(chapters?.Count ?? 0);
+            var result = new SortedList<int, Chapter>(chapters?.Count ?? 0);
 
             if (chapters == null) return result;
 
@@ -183,10 +182,17 @@ namespace NovelParserWPF.ViewModels
 
             var addRange = (int start, int end) =>
             {
-                start -= start > 0 ? 1 : 0;
                 if (end < start) (start, end) = (end, start);
-                end = Math.Min(chapters.Count, end);
-                result.AddRange(chapters.GetRange(start, end - start));
+                start = Math.Max(1, start);
+                end = Math.Min(chapters.Last().Key, end);
+
+                for (int i = start; i <= end; i++)
+                {
+                    if (!result.ContainsKey(i) && chapters.TryGetValue(i, out Chapter? ch))
+                    {
+                        result.Add(i, ch);
+                    }
+                }
             };
 
             foreach (var part in parts)
@@ -206,11 +212,15 @@ namespace NovelParserWPF.ViewModels
                 }
                 else if (int.TryParse(part, out int num))
                 {
-                    result.Add(chapters[Math.Min(chapters.Count - 1, num)]);
+                    var index = Math.Min(chapters.Last().Key, num);
+                    if (chapters.TryGetValue(index, out Chapter? ch))
+                    {
+                        result.Add(index, ch);
+                    }
                 }
             }
 
-            return result.Distinct();
+            return result;
         }
 
         static PropertyChangedEventArgs NovelLinkChangedEventArgs = new PropertyChangedEventArgs(nameof(NovelLink));

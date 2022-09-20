@@ -10,6 +10,6 @@ namespace NovelParserBLL.FileGenerators
 
     internal interface IFileGenerator
     {
-        public void Generate(string file, Novel novel, string translationTeam);
+        public Task Generate(string file, Novel novel, SortedList<int, Chapter> chapters);
     }
 }

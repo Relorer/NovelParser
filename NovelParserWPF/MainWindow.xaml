@@ -68,9 +68,9 @@
                         Name="StartButton"
                         Margin="5"
                         HorizontalAlignment="Stretch"
-                        IsEnabled="{c:Binding Path=!NovelLoadingLock}"
                         Command="{Binding StartButtonClickCommand}"
                         Content="{c:Binding '(Novel == null ? \'Get\' : \'Start\')'}"
+                        IsEnabled="{c:Binding Path=!NovelLoadingLock}"
                         Style="{StaticResource ProgressButtonPrimary}" />
 
                 </DockPanel>
@@ -83,20 +83,19 @@
                         IsEnabled="{c:Binding Path=!NovelLoadingLock}"
                         Text="{Binding NovelLink, UpdateSourceTrigger=PropertyChanged}">
                         <TextBox.InputBindings>
-                            <KeyBinding Key="Return" 
-                    Command="{Binding StartButtonClickCommand}"/>
+                            <KeyBinding Key="Return" Command="{Binding StartButtonClickCommand}" />
                         </TextBox.InputBindings>
                     </hc:TextBox>
 
-                    <StackPanel Visibility="{c:Binding 'TranslationTeam.Count > 0', FalseToVisibility=Collapsed}">
+                    <StackPanel Visibility="{c:Binding 'TranslationTeams.Count > 0', FalseToVisibility=Collapsed}">
                         <ComboBox
                             Margin="5"
                             hc:InfoElement.Title="Team"
                             hc:InfoElement.TitlePlacement="Left"
-                            ItemsSource="{Binding TranslationTeam}"
+                            ItemsSource="{Binding TranslationTeams}"
                             SelectedValue="{Binding SelectedTranslationTeam}"
                             Style="{StaticResource ComboBoxExtend}"
-                            Visibility="{c:Binding 'TranslationTeam.Count > 1',
+                            Visibility="{c:Binding 'TranslationTeams.Count > 1',
                                                    FalseToVisibility=Collapsed}" />
 
                         <hc:TextBox
@@ -125,7 +124,7 @@
                             Content="Select a save path" />
                     </StackPanel>
 
-                    <StackPanel Visibility="{c:Binding 'TranslationTeam.Count == 0', FalseToVisibility=Collapsed}">
+                    <StackPanel Visibility="{c:Binding 'TranslationTeams.Count == 0', FalseToVisibility=Collapsed}">
 
                         <hc:Divider
                             Margin="5,10,5,5"
@@ -253,7 +252,7 @@
                                         Margin="5"
                                         HorizontalAlignment="Left"
                                         Style="{StaticResource TextBlockDefault}"
-                                        Text="{c:Binding (\'Chapters to download: \' + ChaptersToDownload)}" />
+                                        Text="{c:Binding (\'Chapters to download: \' + ChaptersToDownload.Count)}" />
                                 </StackPanel>
 
                             </DockPanel>
