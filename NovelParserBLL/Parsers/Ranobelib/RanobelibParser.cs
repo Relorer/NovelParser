@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using NovelParserBLL.Extensions;
 using NovelParserBLL.Models;
 using NovelParserBLL.Utilities;
+using System.Drawing;
 using System.Text.RegularExpressions;
 
 namespace NovelParserBLL.Parsers.Ranobelib
@@ -78,7 +79,7 @@ namespace NovelParserBLL.Parsers.Ranobelib
                 novel.ChaptersByTranslationTeam = JsonConvert.DeserializeObject<Dictionary<string, List<Chapter>>>((string)driver.ExecuteScript(GetChaptersScript));
             }
 
-            novel.CoverPath = await DownloadCover(novel.CoverUrl, novel.NameEng);
+            novel.Cover = await DownloadCover(novel.CoverUrl, novel.NameEng);
 
             return novel;
         }
@@ -125,11 +126,20 @@ namespace NovelParserBLL.Parsers.Ranobelib
             }
         }
 
-        private async Task<string> DownloadCover(string? url, string? novelName)
+        private async Task<byte[]?> DownloadCover(string? url, string? novelName)
         {
             novelName = FileSystemHelper.RemoveInvalidFilePathCharacters(novelName ?? "", "-");
             novelName = $"cover-{novelName}.jpg";
-            return !string.IsNullOrEmpty(url) && await DownloadImage(url, novelName) ? ChromeDriverHelper.GetDownloadedPath(novelName) : "";
+            var path = !string.IsNullOrEmpty(url) &&
+                await DownloadImage(url, novelName) ? ChromeDriverHelper.GetDownloadedPath(novelName) : "";
+
+            byte[]? cover = null;
+            if (!string.IsNullOrEmpty(path) && File.Exists(path))
+            {
+                cover = File.ReadAllBytes(path);
+                File.Delete(path);
+            }
+            return cover;
         }
 
         private async Task<string> GetImageAsBase64Url(string url)
@@ -164,7 +174,7 @@ namespace NovelParserBLL.Parsers.Ranobelib
 
         public bool ValidateUrl(string url)
         {
-            return url.StartsWith(ranobelibUrl) && (url.IndexOf('?') < 0 || url.IndexOf('?') > ranobelibUrl.Length);
+            return url.Length > ranobelibUrl.Length && PrepareUrl(url).Length > ranobelibUrl.Length;
         }
 
         private string PrepareUrl(string url)

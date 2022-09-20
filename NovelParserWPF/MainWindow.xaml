@@ -65,8 +65,10 @@
                         DockPanel.Dock="Left"
                         IsChecked="{Binding IsOpen, ElementName=SettingsDrawer}" />
                     <hc:ProgressButton
+                        Name="StartButton"
                         Margin="5"
                         HorizontalAlignment="Stretch"
+                        IsEnabled="{c:Binding Path=!NovelLoadingLock}"
                         Command="{Binding StartButtonClickCommand}"
                         Content="{c:Binding '(Novel == null ? \'Get\' : \'Start\')'}"
                         Style="{StaticResource ProgressButtonPrimary}" />
@@ -78,8 +80,13 @@
                     <hc:TextBox
                         Margin="5"
                         hc:InfoElement.Placeholder="Link to ranobe"
-                        IsEnabled="{c:Binding Path=!NovelLinkLock}"
-                        Text="{Binding NovelLink, UpdateSourceTrigger=PropertyChanged}" />
+                        IsEnabled="{c:Binding Path=!NovelLoadingLock}"
+                        Text="{Binding NovelLink, UpdateSourceTrigger=PropertyChanged}">
+                        <TextBox.InputBindings>
+                            <KeyBinding Key="Return" 
+                    Command="{Binding StartButtonClickCommand}"/>
+                        </TextBox.InputBindings>
+                    </hc:TextBox>
 
                     <StackPanel Visibility="{c:Binding 'TranslationTeam.Count > 0', FalseToVisibility=Collapsed}">
                         <ComboBox
@@ -205,7 +212,7 @@
                                     <Image
                                         Margin="5"
                                         VerticalAlignment="Center"
-                                        Source="{Binding Novel.CoverPath}"
+                                        Source="{Binding Cover}"
                                         Stretch="UniformToFill" />
                                     <TextBlock
                                         Margin="5"

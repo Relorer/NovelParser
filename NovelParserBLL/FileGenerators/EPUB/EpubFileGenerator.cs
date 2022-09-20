@@ -34,10 +34,10 @@ namespace NovelParserBLL.FileGenerators.EPUB
                 bodyParagraph_1.Format.AfterSpacing = 10;
             }
 
-            if (novel.CoverPath != null)
+            if (novel.Cover != null)
             {
                 DocPicture cover = new DocPicture(doc);
-                cover.LoadImage(File.ReadAllBytes(novel.CoverPath!));
+                cover.LoadImage(novel.Cover);
                 doc.SaveToEpub(file, cover);
             }
             else

@@ -1,22 +1,28 @@
-﻿using DevExpress.Mvvm.CodeGenerators;
+﻿using DevExpress.Mvvm;
+using DevExpress.Mvvm.CodeGenerators;
+using DevExpress.Mvvm.DataAnnotations;
 using Microsoft.Win32;
 using NovelParserBLL.Extensions;
 using NovelParserBLL.FileGenerators;
 using NovelParserBLL.Models;
 using NovelParserBLL.Parsers.Ranobelib;
 using NovelParserBLL.Utilities;
+using NovelParserWPF.Utilities;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Controls;
+using System.Windows.Media.Imaging;
 
 namespace NovelParserWPF.ViewModels
 {
     [GenerateViewModel]
-    public partial class MainWindowViewModel
+    public partial class MainWindowViewModel : ViewModelBase
     {
         string novelLink = "";
 
@@ -28,14 +34,12 @@ namespace NovelParserWPF.ViewModels
             {
                 if (EqualityComparer<string>.Default.Equals(novelLink, value)) return;
                 novelLink = value;
-                RaisePropertyChanged(NovelLinkChangedEventArgs);
                 ListChaptersPattern = "All";
                 Novel = null;
             }
         }
 
-        [GenerateProperty]
-        bool novelLinkLock = false;
+        public BitmapImage? Cover => Novel?.Cover == null ? null : ImageHelper.BitmapImageFromBuffer(Novel.Cover);
 
         [GenerateProperty]
         bool includeImages = true;
@@ -51,16 +55,38 @@ namespace NovelParserWPF.ViewModels
         [GenerateProperty]
         string listChaptersPattern = "All";
 
+        [GenerateProperty]
+        bool novelLoadingLock = false;
+
         [GenerateCommand]
         void OpenGitHub() => Process.Start(new ProcessStartInfo() { FileName = "https://github.com/Relorer/NovelParser", UseShellExecute = true });
 
         [GenerateCommand]
         void OpenRanobeLib() => Process.Start(new ProcessStartInfo() { FileName = "https://ranobelib.me/", UseShellExecute = true });
 
-        [GenerateCommand]
-        async void StartButtonClick()
+        [AsyncCommand]
+        public async Task StartButtonClick()
         {
-            NovelLinkLock = true;
+            NovelLoadingLock = true;
+
+            //wait ui update for lock
+            await Task.Delay(1000);
+
+            if (Novel == null)
+            {
+                await GetNovelInfo();
+            }
+            else
+            {
+                await ParseNovel();
+            }
+
+            NovelLoadingLock = false;
+        }
+        public bool CanStartButtonClick() => ranobelib.ValidateUrl(NovelLink);
+
+        private async Task GetNovelInfo()
+        {
             Novel = await ranobelib.ParseAsync(NovelLink);
             if (Novel != null && !string.IsNullOrEmpty(Novel.NameEng))
             {
@@ -68,9 +94,12 @@ namespace NovelParserWPF.ViewModels
                 SavePath = Path.Combine(desktop, FileSystemHelper.RemoveInvalidFilePathCharacters(Novel.NameEng));
                 SelectedTranslationTeam = TranslationTeam.First();
             }
-            NovelLinkLock = false;
         }
-        bool CanStartButtonClick() => ranobelib.ValidateUrl(NovelLink);
+
+        private async Task ParseNovel()
+        {
+
+        }
 
         [GenerateProperty]
         Novel? novel;
