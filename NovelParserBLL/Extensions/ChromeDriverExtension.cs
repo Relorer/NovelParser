@@ -2,7 +2,7 @@
 
 namespace NovelParserBLL.Extensions
 {
-    public static class ChromeDriverExtension
+    internal static class ChromeDriverExtension
     {
         public static void GoTo(this ChromeDriver drive, string url)
         {

@@ -9,9 +9,12 @@ using NovelParserBLL.Models;
 using NovelParserBLL.Parsers.Ranobelib;
 using NovelParserBLL.Utilities;
 using NovelParserWPF.Utilities;
+using OpenQA.Selenium;
+using OpenQA.Selenium.Chrome;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -69,13 +72,22 @@ namespace NovelParserWPF.ViewModels
         {
             NovelLoadingLock = true;
 
-            if (Novel == null)
+            TryCloseAuthDriver();
+
+            try
             {
-                await GetNovelInfo();
+                if (Novel == null)
+                {
+                    await GetNovelInfo();
+                }
+                else
+                {
+                    await ParseNovel(Novel);
+                }
             }
-            else
+            catch (WebDriverArgumentException)
             {
-                await ParseNovel(Novel);
+
             }
 
             NovelLoadingLock = false;
@@ -88,16 +100,25 @@ namespace NovelParserWPF.ViewModels
             if (Novel != null && !string.IsNullOrEmpty(Novel.NameEng))
             {
                 string desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-                SavePath = Path.Combine(desktop, FileSystemHelper.RemoveInvalidFilePathCharacters(Novel.NameEng));
+                var format = GetSelectedFileFormat() == FileFormatForGenerator.EPUB ? ".epub" : ".pdf";
+                SavePath = Path.Combine(desktop, FileSystemHelper.RemoveInvalidFilePathCharacters(Novel.NameEng) + format);
                 SelectedTranslationTeam = TranslationTeams.First();
             }
         }
 
         private async Task ParseNovel(Novel novel)
         {
-            await ranobelib.ParseAndLoadChapters(ChaptersToDownload);
-            var extension = GetSelectedFileFormat() == FileFormatForGenerator.EPUB ? ".epub" : ".pdf";
-            await new EpubFileGenerator().Generate(SavePath + extension, novel, ChaptersToDownload);
+            await ranobelib.ParseAndLoadChapters(ChaptersToDownload, IncludeImages);
+            await new EpubFileGenerator().Generate(SavePath, novel, ChaptersToDownload);
+        }
+
+        public bool UseCookies
+        {
+            get => bool.Parse(ConfigurationManager.AppSettings["UseCookies"] ?? "false");
+            set
+            {
+                SettingsHelper.AddOrUpdateAppSettings("UseCookies", value.ToString());
+            }
         }
 
         [GenerateProperty]
@@ -131,15 +152,35 @@ namespace NovelParserWPF.ViewModels
 
         #region SettingsRegion
 
-        [GenerateProperty]
-        bool useCookies = false;
+        private ChromeDriver? authDriver;
 
         [GenerateCommand]
-        void OpenRanobeLibAuthClick() => Console.WriteLine("Open ranobelib auth");
-        bool CanOpenRanobeLibAuthClick() => UseCookies;
+        public void OpenRanobeLibAuthClick()
+        {
+            TryCloseAuthDriver();
+            authDriver = ranobelib.OpenAuthPage();
+        }
+
+        private void TryCloseAuthDriver()
+        {
+            authDriver?.Dispose();
+            authDriver = null;
+        }
+
+        public bool CanOpenRanobeLibAuthClick() => UseCookies;
 
         [GenerateCommand]
-        void ClearCookiesClick() => Console.WriteLine("ClearCookiesClick");
+        void CloseWindowHandler()
+        {
+            TryCloseAuthDriver();
+        }
+
+        [GenerateCommand]
+        void ClearCookiesClick()
+        {
+            TryCloseAuthDriver();
+            ChromeDriverHelper.ClearCookies();
+        }
         bool CanClearCookiesClick() => UseCookies;
 
         #endregion

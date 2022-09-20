@@ -4,7 +4,6 @@ using NovelParserBLL.Extensions;
 using NovelParserBLL.Models;
 using NovelParserBLL.Utilities;
 using OpenQA.Selenium.Chrome;
-using System.Drawing;
 using System.Text.RegularExpressions;
 
 namespace NovelParserBLL.Parsers.Ranobelib
@@ -80,49 +79,47 @@ namespace NovelParserBLL.Parsers.Ranobelib
 
         private readonly HtmlParser parser = new HtmlParser();
 
-        public async Task<Novel> ParseAsync(string ranobeUrl)
+        public async Task<Novel?> ParseAsync(string ranobeUrl)
         {
-            Novel novel = await Task.Run(async () =>
+            return await Task.Run(async () =>
             {
-                Novel novel;
+                Novel? novel;
 
                 using (var driver = await TryLoadPage(PrepareUrl(ranobeUrl)))
                 {
-                    novel = JsonConvert.DeserializeObject<Novel>((string)driver.ExecuteScript(GetNovelInfoScript)) ?? new Novel();
+                    novel = JsonConvert.DeserializeObject<Novel>((string)driver.ExecuteScript(GetNovelInfoScript));
+
+                    if (novel == null) return null;
 
                     novel.ChaptersByTranslationTeam = JsonConvert.DeserializeObject<Dictionary<string, SortedList<int, Chapter>>>((string)driver.ExecuteScript(GetChaptersScript));
                 }
 
+                novel.Cover = await DownloadCover(novel.CoverUrl, novel.NameEng);
                 return novel;
             });
-
-            novel.Cover = await DownloadCover(novel.CoverUrl, novel.NameEng);
-
-            return novel;
         }
 
-        public Task ParseAndLoadChapters(SortedList<int, Chapter> chapters)
+        public Task ParseAndLoadChapters(SortedList<int, Chapter> chapters, bool includeImages = true)
         {
             return Task.Run(async () =>
             {
                 foreach (var item in chapters)
                 {
-                    if (string.IsNullOrEmpty(item.Value.Content))
+                    if (string.IsNullOrEmpty(item.Value.Content) || (item.Value.ImagesLoaded ^ includeImages))
                     {
-                        await ParseChapter(item.Value);
+                        await ParseChapter(item.Value, includeImages);
                     }
                 }
             });
         }
 
-        private async Task ParseChapter(Chapter chapter)
+        private async Task ParseChapter(Chapter chapter, bool includeImages = true)
         {
             // open a new сhrome driver for each chapter to avoid blocking
             using (var driver = await TryLoadPage(chapter.Url))
             {
-                chapter.Content = (string?)driver.ExecuteScript("return document.querySelector('.reader-container')?.innerHTML");
+                chapter.Content = (string)driver.ExecuteScript("return document.querySelector('.reader-container')?.innerHTML");
             }
-
 
             if (chapter.Content != null && chapter.Content.Contains("img"))
             {
@@ -130,16 +127,25 @@ namespace NovelParserBLL.Parsers.Ranobelib
 
                 foreach (var item in document.QuerySelectorAll("img"))
                 {
-                    string? url = item.GetAttribute("data-src");
-                    if (!string.IsNullOrEmpty(url))
+                    if (includeImages)
                     {
-                        var base64 = GetImageAsBase64Url(url);
-                        item.SetAttribute("src", await base64);
+                        string? url = item.GetAttribute("data-src");
+                        if (!string.IsNullOrEmpty(url))
+                        {
+                            var base64 = GetImageAsBase64Url(url);
+                            item.SetAttribute("src", await base64);
+                        }
+                    }
+                    else
+                    {
+                        item.Remove();
                     }
                 }
 
-                chapter.Content = document?.Body?.InnerHtml;
+                chapter.Content = document.Body?.InnerHtml ?? "";
             }
+
+            chapter.ImagesLoaded = includeImages;
         }
 
         private async Task<byte[]?> DownloadCover(string? url, string? novelName)
@@ -224,6 +230,21 @@ namespace NovelParserBLL.Parsers.Ranobelib
         private bool CheckChallengeRunning(ChromeDriver driver)
         {
             return JsonConvert.DeserializeObject<bool>((string)driver.ExecuteScript(CheckChallengeRunningScript));
+        }
+
+        public ChromeDriver OpenAuthPage()
+        {
+            var driver = ChromeDriverHelper.StartChrome(true);
+            driver.GoTo("https://lib.social/login");
+
+            Task.Run(async () =>
+            {
+                await Task.Delay(15 * 60_000);
+                driver?.Close();
+                driver?.Dispose();
+            });
+
+            return driver;
         }
     }
 }

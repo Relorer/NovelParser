@@ -9,6 +9,7 @@
     xmlns:local="clr-namespace:NovelParserWPF"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="clr-namespace:NovelParserWPF.ViewModels"
+    Name="WindowMain"
     Title="NovelParser"
     Width="850"
     Height="500"
@@ -16,6 +17,12 @@
     MinHeight="400"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
+
+    <Behaviors:Interaction.Triggers>
+        <Behaviors:EventTrigger EventName="Closed" SourceObject="{Binding ElementName=WindowMain}">
+            <Behaviors:InvokeCommandAction Command="{Binding CloseWindowHandlerCommand}" />
+        </Behaviors:EventTrigger>
+    </Behaviors:Interaction.Triggers>
 
     <Window.DataContext>
         <vm:MainWindowViewModel />
@@ -42,15 +49,17 @@
                         Margin="5"
                         HorizontalAlignment="Stretch"
                         Command="{Binding OpenRanobeLibAuthClickCommand}"
-                        Content="RanobeLib.me" />
+                        Content="RanobeLib.me"
+                        IsEnabled="{c:Binding Path=!NovelLoadingLock}" />
                     <Button
                         Margin="5"
                         HorizontalAlignment="Stretch"
                         Command="{Binding ClearCookiesClickCommand}"
-                        Content="Clear cookies" />
+                        Content="Clear cookies"
+                        IsEnabled="{c:Binding Path=!NovelLoadingLock}" />
                     <CheckBox
                         Margin="5"
-                        Content="Save cookies"
+                        Content="Use cookies"
                         IsChecked="{Binding UseCookies}" />
                 </StackPanel>
             </Border>
@@ -60,6 +69,7 @@
             <DockPanel Margin="12" LastChildFill="True">
 
                 <DockPanel DockPanel.Dock="Bottom" LastChildFill="True">
+
                     <ToggleButton
                         hc:IconElement.Geometry="{StaticResource ConfigGeometry}"
                         DockPanel.Dock="Left"
@@ -69,7 +79,7 @@
                         Margin="5"
                         HorizontalAlignment="Stretch"
                         Command="{Binding StartButtonClickCommand}"
-                        Content="{c:Binding '(Novel == null ? \'Get\' : \'Start\')'}"
+                        Content="{c:Binding '(Novel==null?\'Get\' : \'Start\')'}"
                         IsEnabled="{c:Binding Path=!NovelLoadingLock}"
                         Style="{StaticResource ProgressButtonPrimary}" />
 
@@ -92,6 +102,7 @@
                             Margin="5"
                             hc:InfoElement.Title="Team"
                             hc:InfoElement.TitlePlacement="Left"
+                            IsEnabled="{c:Binding Path=!NovelLoadingLock}"
                             ItemsSource="{Binding TranslationTeams}"
                             SelectedValue="{Binding SelectedTranslationTeam}"
                             Style="{StaticResource ComboBoxExtend}"
@@ -103,25 +114,29 @@
                             hc:InfoElement.Placeholder="All, 30-125"
                             hc:InfoElement.Title="List of chapters"
                             hc:InfoElement.TitlePlacement="Left"
+                            IsEnabled="{c:Binding Path=!NovelLoadingLock}"
                             Text="{c:Binding ListChaptersPattern,
                                              UpdateSourceTrigger=PropertyChanged}"
                             ToolTip="Use indexes, not actual chapter numbers" />
 
                         <hc:ButtonGroup
                             Margin="5"
+                            IsEnabled="{c:Binding Path=!NovelLoadingLock}"
                             ItemsSource="{Binding FileFormatsForGenerator}"
                             Style="{StaticResource ButtonGroupSolid}" />
 
                         <CheckBox
                             Margin="5"
                             Content="Include images"
-                            IsChecked="{Binding IncludeImages}" />
+                            IsChecked="{Binding IncludeImages}"
+                            IsEnabled="{c:Binding Path=!NovelLoadingLock}" />
 
                         <Button
                             Margin="5"
                             HorizontalAlignment="Stretch"
                             Command="{Binding SelectSavePathCommand}"
-                            Content="Select a save path" />
+                            Content="Select a save path"
+                            IsEnabled="{c:Binding Path=!NovelLoadingLock}" />
                     </StackPanel>
 
                     <StackPanel Visibility="{c:Binding 'TranslationTeams.Count == 0', FalseToVisibility=Collapsed}">

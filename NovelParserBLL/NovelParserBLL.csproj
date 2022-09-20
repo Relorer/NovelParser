@@ -21,6 +21,7 @@
     <PackageReference Include="FreeSpire.Doc" Version="10.8.0" />
     <PackageReference Include="Selenium.WebDriver" Version="4.4.0" />
     <PackageReference Include="Selenium.WebDriver.ChromeDriver" Version="105.0.5195.5200" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.1" />
   </ItemGroup>
 
   <ItemGroup>
