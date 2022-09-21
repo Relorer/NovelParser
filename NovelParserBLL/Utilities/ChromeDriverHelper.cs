@@ -50,7 +50,10 @@ namespace NovelParserBLL.Utilities
 
         public static ChromeDriver StartChrome(bool visible = false)
         {
-            var driver = new ChromeDriver(GetChromeDriverOptions(visible));
+            var chromeDriverService = ChromeDriverService.CreateDefaultService();
+            chromeDriverService.HideCommandPromptWindow = true;
+
+            var driver = new ChromeDriver(chromeDriverService, GetChromeDriverOptions(visible));
             driver.ExecuteScript("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})");
             return driver;
         }
