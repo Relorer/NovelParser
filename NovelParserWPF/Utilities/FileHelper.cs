@@ -26,6 +26,7 @@ namespace NovelParserWPF.Utilities
         {
             FileFormatForGenerator.EPUB => "EPUB file|*.epub",
             FileFormatForGenerator.PDF => "PDF file|*.pdf",
+            _ => throw new System.NotImplementedException(),
         };
     }
 }

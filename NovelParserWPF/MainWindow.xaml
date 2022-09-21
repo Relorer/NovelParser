@@ -50,17 +50,26 @@
                         HorizontalAlignment="Stretch"
                         Command="{Binding OpenRanobeLibAuthClickCommand}"
                         Content="RanobeLib.me"
-                        IsEnabled="{c:Binding Path=!NovelLoadingLock}" />
+                        IsEnabled="{c:Binding Path=!IsLoadingProgressButton}" />
                     <Button
                         Margin="5"
                         HorizontalAlignment="Stretch"
                         Command="{Binding ClearCookiesClickCommand}"
                         Content="Clear cookies"
-                        IsEnabled="{c:Binding Path=!NovelLoadingLock}" />
+                        IsEnabled="{c:Binding Path=!IsLoadingProgressButton}" />
                     <CheckBox
                         Margin="5"
                         Content="Use cookies"
                         IsChecked="{Binding UseCookies}" />
+                    <hc:Divider
+                        Margin="5,10,5,5"
+                        Content="Cache"
+                        Opacity="0.55" />
+                    <Button
+                        Margin="5"
+                        HorizontalAlignment="Stretch"
+                        Command="{Binding ClearCacheClickCommand}"
+                        Content="Clear cache" />
                 </StackPanel>
             </Border>
         </hc:Drawer>
@@ -80,8 +89,8 @@
                         HorizontalAlignment="Stretch"
                         Command="{Binding StartButtonClickCommand}"
                         Content="{Binding ProgressButtonText}"
-                        IsEnabled="{Binding CanStartButtonClick}"
                         IsChecked="{Binding IsLoadingProgressButton}"
+                        IsEnabled="{Binding CanStartButtonClick}"
                         Progress="{Binding ProgressValueProgressButton}"
                         Style="{StaticResource ProgressButtonPrimary}" />
 
@@ -92,7 +101,7 @@
                     <hc:TextBox
                         Margin="5"
                         hc:InfoElement.Placeholder="Link to ranobe"
-                        IsEnabled="{c:Binding Path=!NovelLoadingLock}"
+                        IsEnabled="{c:Binding Path=!IsLoadingProgressButton}"
                         Text="{Binding NovelLink, UpdateSourceTrigger=PropertyChanged}">
                         <TextBox.InputBindings>
                             <KeyBinding Key="Return" Command="{Binding StartButtonClickCommand}" />
@@ -104,7 +113,7 @@
                             Margin="5"
                             hc:InfoElement.Title="Team"
                             hc:InfoElement.TitlePlacement="Left"
-                            IsEnabled="{c:Binding Path=!NovelLoadingLock}"
+                            IsEnabled="{c:Binding Path=!IsLoadingProgressButton}"
                             ItemsSource="{Binding TranslationTeams}"
                             SelectedValue="{Binding SelectedTranslationTeam}"
                             Style="{StaticResource ComboBoxExtend}"
@@ -116,14 +125,14 @@
                             hc:InfoElement.Placeholder="All, 30-125"
                             hc:InfoElement.Title="List of chapters"
                             hc:InfoElement.TitlePlacement="Left"
-                            IsEnabled="{c:Binding Path=!NovelLoadingLock}"
+                            IsEnabled="{c:Binding Path=!IsLoadingProgressButton}"
                             Text="{c:Binding ListChaptersPattern,
                                              UpdateSourceTrigger=PropertyChanged}"
                             ToolTip="Use indexes, not actual chapter numbers" />
 
                         <hc:ButtonGroup
                             Margin="5"
-                            IsEnabled="{c:Binding Path=!NovelLoadingLock}"
+                            IsEnabled="{c:Binding Path=!IsLoadingProgressButton}"
                             ItemsSource="{Binding FileFormatsForGenerator}"
                             Style="{StaticResource ButtonGroupSolid}" />
 
@@ -131,14 +140,14 @@
                             Margin="5"
                             Content="Include images"
                             IsChecked="{Binding IncludeImages}"
-                            IsEnabled="{c:Binding Path=!NovelLoadingLock}" />
+                            IsEnabled="{c:Binding Path=!IsLoadingProgressButton}" />
 
                         <Button
                             Margin="5"
                             HorizontalAlignment="Stretch"
                             Command="{Binding SelectSavePathCommand}"
                             Content="Select a save path"
-                            IsEnabled="{c:Binding Path=!NovelLoadingLock}" />
+                            IsEnabled="{c:Binding Path=!IsLoadingProgressButton}" />
                     </StackPanel>
 
                     <StackPanel Visibility="{c:Binding 'TranslationTeams.Count == 0', FalseToVisibility=Collapsed}">

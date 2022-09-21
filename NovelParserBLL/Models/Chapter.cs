@@ -9,6 +9,7 @@ namespace NovelParserBLL.Models
         public string Number { get; }
         public int Index { get; }
         public string Content { get; set; }
+        public Dictionary<string, byte[]> Images { get; set; } = new Dictionary<string, byte[]>();
         public bool ImagesLoaded { get; set; }
 
         public Chapter(string name, string url, string content, string number, int index)

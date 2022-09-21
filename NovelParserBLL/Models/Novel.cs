@@ -4,6 +4,7 @@ namespace NovelParserBLL.Models
 {
     public class Novel
     {
+        public string URL { get; set; } = "";
         public string NameRus { get; }
         public string NameEng { get; }
         public string CoverUrl { get; }

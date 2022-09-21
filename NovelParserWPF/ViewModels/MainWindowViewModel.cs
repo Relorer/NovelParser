@@ -97,9 +97,9 @@ namespace NovelParserWPF.ViewModels
         public int ProgressValueProgressButton { get; set; } = 0;
         public bool NovelLoadingLock { get; set; } = false;
 
-        private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+        private CancellationTokenSource? cancellationTokenSource = null;
 
-        private Task task;
+        private Task? loadingTask;
 
         private bool isLoadingProgressButton = false;
         public bool IsLoadingProgressButton
@@ -107,20 +107,23 @@ namespace NovelParserWPF.ViewModels
             get => isLoadingProgressButton;
             set
             {
-                if (isLoadingProgressButton)
+                if (isLoadingProgressButton && !value)
                 {
-                    cancellationTokenSource.Cancel();
-                    if (task == null || task.Status > TaskStatus.WaitingForChildrenToComplete)
+                    cancellationTokenSource?.Cancel();
+                    ProgressButtonText = "Canceling";
+                    if (loadingTask == null || loadingTask.Status > TaskStatus.WaitingForChildrenToComplete)
                     {
+                        cancellationTokenSource?.Dispose();
                         isLoadingProgressButton = false;
-                        ProgressButtonText = Novel == null ? "Start" : "Get";
+                        ProgressButtonText = Novel == null ? "Get" : "Start";
                     }
                 }
-                else
+                else if (value)
                 {
                     isLoadingProgressButton = true;
-                    task = StartButtonClick(cancellationTokenSource.Token);
-                    task.ContinueWith((_) =>
+                    cancellationTokenSource = new CancellationTokenSource();
+                    loadingTask = StartButtonClick(cancellationTokenSource.Token);
+                    loadingTask.ContinueWith((_) =>
                     {
                         IsLoadingProgressButton = false;
                     });
@@ -169,8 +172,14 @@ namespace NovelParserWPF.ViewModels
         }
         private async Task ParseNovel(Novel novel, CancellationToken cancellationToken)
         {
-            await ranobelib.ParseAndLoadChapters(ChaptersToDownload, IncludeImages, cancellationToken);
+            await ranobelib.ParseAndLoadChapters(novel, ChaptersToDownload, IncludeImages, SetProgressValueProgressButton, cancellationToken);
+            if (cancellationToken.IsCancellationRequested) return;
             await new EpubFileGenerator().Generate(SavePath, novel, ChaptersToDownload);
+        }
+
+        private void SetProgressValueProgressButton(int total, int current)
+        {
+            ProgressValueProgressButton = (int)(current / (double)total * 100);
         }
 
         #endregion
@@ -222,14 +231,19 @@ namespace NovelParserWPF.ViewModels
 
         #endregion
 
+        [GenerateCommand]
+        private void ClearCacheClick()
+        {
+            NovelCacheService.ClearCache();
+        }
+
         #region CloseWindow
 
         [GenerateCommand]
         private void CloseWindowHandler()
         {
             TryCloseAuthDriver();
-            cancellationTokenSource.Cancel();
-            cancellationTokenSource.Dispose();
+            cancellationTokenSource?.Dispose();
         }
 
         #endregion

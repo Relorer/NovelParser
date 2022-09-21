@@ -83,43 +83,88 @@ namespace NovelParserBLL.Parsers.Ranobelib
         {
             return await Task.Run(async () =>
             {
+                var url = PrepareUrl(ranobeUrl);
                 Novel? novel;
 
-                using (var driver = await TryLoadPage(PrepareUrl(ranobeUrl)))
+                Novel? novelFromCache = NovelCacheService.TryGetNovelFromFile(url);
+
+                if (cancellationToken.IsCancellationRequested) return null;
+
+                using (var driver = await TryLoadPage(url))
                 {
                     novel = JsonConvert.DeserializeObject<Novel>((string)driver.ExecuteScript(GetNovelInfoScript));
 
-                    if (novel == null) return null;
+                    if (novel == null) return novelFromCache;
 
                     novel.ChaptersByTranslationTeam = JsonConvert.DeserializeObject<Dictionary<string, SortedList<int, Chapter>>>((string)driver.ExecuteScript(GetChaptersScript));
                 }
 
-                novel.Cover = await DownloadCover(novel.CoverUrl, novel.NameEng);
+                if (novelFromCache != null)
+                {
+                    novel.Cover = novelFromCache.Cover;
+                    if (novel.ChaptersByTranslationTeam != null)
+                    {
+                        foreach (var team in novel.ChaptersByTranslationTeam)
+                        {
+                            if (
+                                    novelFromCache.ChaptersByTranslationTeam != null &&
+                                    novelFromCache.ChaptersByTranslationTeam.TryGetValue(team.Key, out SortedList<int, Chapter>? chapters)
+                                )
+                            {
+                                foreach (var item in team.Value)
+                                {
+                                    if (chapters.TryGetValue(item.Key, out Chapter? chapter) && !string.IsNullOrEmpty(chapter.Content))
+                                    {
+                                        item.Value.Content = chapter.Content;
+                                        item.Value.Images = chapter.Images;
+                                        item.Value.ImagesLoaded = chapter.ImagesLoaded;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    if (cancellationToken.IsCancellationRequested) return null;
+                    novel.Cover = await GetImageAsByteArray(novel.CoverUrl);
+                }
+
+                novel.URL = url;
+                NovelCacheService.SaveNovelToFile(novel);
                 return novel;
             });
         }
 
-        public Task ParseAndLoadChapters(SortedList<int, Chapter> chapters, bool includeImages, CancellationToken cancellationToken)
+        public Task ParseAndLoadChapters(Novel novel, SortedList<int, Chapter> chapters, bool includeImages, Action<int, int> setProgress, CancellationToken cancellationToken)
         {
             return Task.Run(async () =>
             {
+                var parsed = 1;
                 foreach (var item in chapters)
                 {
                     if (string.IsNullOrEmpty(item.Value.Content) || (item.Value.ImagesLoaded ^ includeImages))
                     {
-                        await ParseChapter(item.Value, includeImages);
+                        await ParseChapter(item.Value, includeImages, cancellationToken);
+                        setProgress(chapters.Count, parsed++);
                     }
                 }
+
+                NovelCacheService.SaveNovelToFile(novel);
             });
         }
 
-        private async Task ParseChapter(Chapter chapter, bool includeImages = true)
+        private async Task ParseChapter(Chapter chapter, bool includeImages, CancellationToken cancellationToken)
         {
+            if (cancellationToken.IsCancellationRequested) return;
+
             // open a new сhrome driver for each chapter to avoid blocking
             using (var driver = await TryLoadPage(chapter.Url))
             {
                 chapter.Content = (string)driver.ExecuteScript("return document.querySelector('.reader-container')?.innerHTML");
             }
+
+            if (cancellationToken.IsCancellationRequested) return;
 
             if (chapter.Content != null && chapter.Content.Contains("img"))
             {
@@ -129,16 +174,20 @@ namespace NovelParserBLL.Parsers.Ranobelib
                 {
                     if (includeImages)
                     {
-                        string? url = item.GetAttribute("data-src");
+                        string? url = item.GetAttribute("data-src") ?? item.GetAttribute("src");
+                        if (url != null && !url.Contains(ranobelibUrl)) url = ranobelibUrl + url;
                         if (!string.IsNullOrEmpty(url))
                         {
-                            var base64 = GetImageAsBase64Url(url);
-                            item.SetAttribute("src", await base64);
+                            var image = GetImageAsByteArray(url);
+                            var name = Guid.NewGuid().ToString();
+                            chapter.Images.Add(name, await image);
+                            item.SetAttribute("src", name);
                         }
                     }
                     else
                     {
                         item.Remove();
+                        chapter.Images.Clear();
                     }
                 }
 
@@ -148,31 +197,15 @@ namespace NovelParserBLL.Parsers.Ranobelib
             chapter.ImagesLoaded = includeImages;
         }
 
-        private async Task<byte[]?> DownloadCover(string? url, string? novelName)
+        private async Task<byte[]> GetImageAsByteArray(string url)
         {
-            novelName = FileSystemHelper.RemoveInvalidFilePathCharacters(novelName ?? "", "-");
-            novelName = $"cover-{novelName}.jpg";
-            var path = !string.IsNullOrEmpty(url) &&
-                await DownloadImage(url, novelName) ? ChromeDriverHelper.GetDownloadedPath(novelName) : "";
-
-            byte[]? cover = null;
-            if (!string.IsNullOrEmpty(path) && File.Exists(path))
-            {
-                cover = File.ReadAllBytes(path);
-                File.Delete(path);
-            }
-            return cover;
-        }
-
-        private async Task<string> GetImageAsBase64Url(string url)
-        {
-            string result = "";
+            byte[] result = new byte[0];
 
             string fullPath = ChromeDriverHelper.GetDownloadedPath(downloadedFileName);
 
             if (await DownloadImage(url, downloadedFileName))
             {
-                result = ImgHelper.ImageFileToBase64(fullPath);
+                result = File.ReadAllBytes(fullPath);
                 File.Delete(fullPath);
             }
 

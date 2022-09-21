@@ -1,7 +1,5 @@
 ﻿using NovelParserBLL.Models;
-using Spire.Doc;
-using Spire.Doc.Documents;
-using Spire.Doc.Fields;
+using EpubSharp;
 
 namespace NovelParserBLL.FileGenerators.EPUB
 {
@@ -11,39 +9,24 @@ namespace NovelParserBLL.FileGenerators.EPUB
         {
             return Task.Run(() =>
             {
-                Document doc = new Document();
-                doc.BuiltinDocumentProperties.Author = novel.Author;
-                doc.BuiltinDocumentProperties.CreateDate = DateTime.Now;
-                doc.BuiltinDocumentProperties.Title = novel.NameRus;
+                EpubWriter writer = new EpubWriter();
 
-                foreach (var item in chapters)
-                {
-                    Section section = doc.AddSection();
-                    section.PageSetup.Margins.All = 40f;
-                    Paragraph titleParagraph = section.AddParagraph();
-                    titleParagraph.AppendText(string.IsNullOrEmpty(item.Value.Name) ? $"Глава {item.Value.Number}" : item.Value.Name);
-                    titleParagraph.Format.AfterSpacing = 10;
-                    titleParagraph.Format.HorizontalAlignment = HorizontalAlignment.Center;
-                    titleParagraph.ApplyStyle(BuiltinStyle.Heading1);
+                writer.AddAuthor(novel.Author);
+                writer.SetCover(novel.Cover, ImageFormat.Png);
+                writer.SetTitle(novel.NameRus);
 
-                    Paragraph bodyParagraph_1 = section.AddParagraph();
-                    bodyParagraph_1.AppendHTML(item.Value.Content ?? "");
-                    bodyParagraph_1.Format.HorizontalAlignment = HorizontalAlignment.Justify;
-                    bodyParagraph_1.Format.FirstLineIndent = 30;
-                    bodyParagraph_1.Format.AfterSpacing = 10;
-                }
-
-                if (novel.Cover != null)
+                foreach (var chapter in chapters)
                 {
-                    DocPicture cover = new DocPicture(doc);
-                    cover.LoadImage(novel.Cover);
-                    doc.SaveToEpub(file, cover);
+                    var title = string.IsNullOrEmpty(chapter.Value.Name) ? $"Глава {chapter.Value.Number}" : chapter.Value.Name;
+                    writer.AddChapter(title, chapter.Value.Content ?? "");
+                    foreach (var item in chapter.Value.Images)
+                    {
+                        writer.AddFile(item.Key, item.Value, EpubSharp.Format.EpubContentType.ImagePng);
+                    }
                 }
-                else
-                {
-                    doc.SaveToFile(file, FileFormat.EPub);
-                }
+                writer.Write(file);
             });
+
         }
     }
 }

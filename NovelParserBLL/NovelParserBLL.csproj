@@ -17,8 +17,8 @@
 
   <ItemGroup>
     <PackageReference Include="AngleSharp" Version="0.17.1" />
+    <PackageReference Include="EpubSharp.dll" Version="1.1.5" />
     <PackageReference Include="FakeUserAgent" Version="1.0.2" />
-    <PackageReference Include="FreeSpire.Doc" Version="10.8.0" />
     <PackageReference Include="Selenium.WebDriver" Version="4.4.0" />
     <PackageReference Include="Selenium.WebDriver.ChromeDriver" Version="105.0.5195.5200" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.1" />
