@@ -1,6 +1,5 @@
 ﻿using DevExpress.Mvvm;
 using DevExpress.Mvvm.CodeGenerators;
-using DevExpress.Mvvm.DataAnnotations;
 using NovelParserBLL.FileGenerators;
 using NovelParserBLL.FileGenerators.EPUB;
 using NovelParserBLL.Models;

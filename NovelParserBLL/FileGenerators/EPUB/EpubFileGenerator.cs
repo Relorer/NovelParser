@@ -18,7 +18,8 @@ namespace NovelParserBLL.FileGenerators.EPUB
                 foreach (var chapter in chapters)
                 {
                     var title = string.IsNullOrEmpty(chapter.Value.Name) ? $"Глава {chapter.Value.Number}" : chapter.Value.Name;
-                    writer.AddChapter(title, chapter.Value.Content ?? "");
+                    var content = $"<h2>{title}<h2>" + chapter.Value.Content;
+                    writer.AddChapter(title, content);
                     foreach (var item in chapter.Value.Images)
                     {
                         writer.AddFile(item.Key, item.Value, EpubSharp.Format.EpubContentType.ImagePng);
