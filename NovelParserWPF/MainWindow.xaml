@@ -79,8 +79,10 @@
                         Margin="5"
                         HorizontalAlignment="Stretch"
                         Command="{Binding StartButtonClickCommand}"
-                        Content="{c:Binding '(Novel==null?\'Get\' : \'Start\')'}"
-                        IsEnabled="{c:Binding Path=!NovelLoadingLock}"
+                        Content="{Binding ProgressButtonText}"
+                        IsEnabled="{Binding CanStartButtonClick}"
+                        IsChecked="{Binding IsLoadingProgressButton}"
+                        Progress="{Binding ProgressValueProgressButton}"
                         Style="{StaticResource ProgressButtonPrimary}" />
 
                 </DockPanel>

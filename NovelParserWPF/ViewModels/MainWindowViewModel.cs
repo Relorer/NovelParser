@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
@@ -91,53 +92,73 @@ namespace NovelParserWPF.ViewModels
         #endregion
 
         #region Parsing
-        private bool isParsing = false;
-        public bool IsParsing
+
+        public string ProgressButtonText { get; set; } = "Start";
+        public int ProgressValueProgressButton { get; set; } = 0;
+        public bool NovelLoadingLock { get; set; } = false;
+
+        private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+
+        private Task task;
+
+        private bool isLoadingProgressButton = false;
+        public bool IsLoadingProgressButton
         {
-            get => isParsing;
+            get => isLoadingProgressButton;
             set
             {
-                isParsing = value;
-                NovelLoadingLock = value;
-                Console.WriteLine(isParsing);
-            }
-        }
-
-        public bool NovelLoadingLock { get; set; } = false;
-        public int Progress { get; set; } = 55;
-
-        [AsyncCommand]
-        public async Task StartButtonClick()
-        {
-            NovelLoadingLock = true;
-
-            TryCloseAuthDriver();
-
-            try
-            {
-                if (Novel == null)
+                if (isLoadingProgressButton)
                 {
-                    await GetNovelInfo();
+                    cancellationTokenSource.Cancel();
+                    if (task == null || task.Status > TaskStatus.WaitingForChildrenToComplete)
+                    {
+                        isLoadingProgressButton = false;
+                        ProgressButtonText = Novel == null ? "Start" : "Get";
+                    }
                 }
                 else
                 {
-                    await ParseNovel(Novel);
+                    isLoadingProgressButton = true;
+                    task = StartButtonClick(cancellationTokenSource.Token);
+                    task.ContinueWith((_) =>
+                    {
+                        IsLoadingProgressButton = false;
+                    });
+                    ProgressButtonText = Novel == null ? "Loading" : "Parsing";
                 }
             }
-            catch (WebDriverArgumentException)
-            {
-            }
-            catch (Exception)
-            {
-            }
-
-            NovelLoadingLock = false;
         }
-        public bool CanStartButtonClick() => ranobelib.ValidateUrl(NovelLink);
 
-        private async Task GetNovelInfo()
+        public async Task StartButtonClick(CancellationToken cancellationToken)
         {
-            Novel = await ranobelib.ParseAsync(NovelLink);
+            try
+            {
+                TryCloseAuthDriver();
+
+                if (Novel == null)
+                {
+                    await GetNovelInfo(cancellationToken);
+                }
+                else
+                {
+                    await ParseNovel(Novel, cancellationToken);
+                }
+            }
+            catch (WebDriverArgumentException ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+
+        public bool CanStartButtonClick => ranobelib.ValidateUrl(NovelLink);
+
+        private async Task GetNovelInfo(CancellationToken cancellationToken)
+        {
+            Novel = await ranobelib.ParseAsync(NovelLink, cancellationToken);
             if (Novel != null && !string.IsNullOrEmpty(Novel.NameEng))
             {
                 string desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
@@ -146,9 +167,9 @@ namespace NovelParserWPF.ViewModels
                 SelectedTranslationTeam = TranslationTeams.First();
             }
         }
-        private async Task ParseNovel(Novel novel)
+        private async Task ParseNovel(Novel novel, CancellationToken cancellationToken)
         {
-            await ranobelib.ParseAndLoadChapters(ChaptersToDownload, IncludeImages);
+            await ranobelib.ParseAndLoadChapters(ChaptersToDownload, IncludeImages, cancellationToken);
             await new EpubFileGenerator().Generate(SavePath, novel, ChaptersToDownload);
         }
 
@@ -207,6 +228,8 @@ namespace NovelParserWPF.ViewModels
         private void CloseWindowHandler()
         {
             TryCloseAuthDriver();
+            cancellationTokenSource.Cancel();
+            cancellationTokenSource.Dispose();
         }
 
         #endregion

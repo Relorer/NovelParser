@@ -79,7 +79,7 @@ namespace NovelParserBLL.Parsers.Ranobelib
 
         private readonly HtmlParser parser = new HtmlParser();
 
-        public async Task<Novel?> ParseAsync(string ranobeUrl)
+        public async Task<Novel?> ParseAsync(string ranobeUrl, CancellationToken cancellationToken)
         {
             return await Task.Run(async () =>
             {
@@ -99,7 +99,7 @@ namespace NovelParserBLL.Parsers.Ranobelib
             });
         }
 
-        public Task ParseAndLoadChapters(SortedList<int, Chapter> chapters, bool includeImages = true)
+        public Task ParseAndLoadChapters(SortedList<int, Chapter> chapters, bool includeImages, CancellationToken cancellationToken)
         {
             return Task.Run(async () =>
             {
@@ -197,7 +197,7 @@ namespace NovelParserBLL.Parsers.Ranobelib
 
         public bool ValidateUrl(string url)
         {
-            return url.Length > ranobelibUrl.Length && PrepareUrl(url).Length > ranobelibUrl.Length;
+            return url.Length > ranobelibUrl.Length && url.StartsWith(ranobelibUrl) && PrepareUrl(url).Length > ranobelibUrl.Length;
         }
 
         private string PrepareUrl(string url)
