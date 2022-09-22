@@ -141,16 +141,20 @@ namespace NovelParserBLL.Parsers.Ranobelib
             return Task.Run(async () =>
             {
                 var parsed = 1;
-                foreach (var item in chapters)
+                try
                 {
-                    if (string.IsNullOrEmpty(item.Value.Content) || (item.Value.ImagesLoaded ^ includeImages))
+                    foreach (var item in chapters)
                     {
-                        await ParseChapter(item.Value, includeImages, cancellationToken);
-                        setProgress(chapters.Count, parsed++);
+                        if (string.IsNullOrEmpty(item.Value.Content) || (item.Value.ImagesLoaded ^ includeImages))
+                        {
+                            await ParseChapter(item.Value, includeImages, cancellationToken);
+                            setProgress(chapters.Count, parsed++);
+                        }
                     }
                 }
-
-                NovelCacheService.SaveNovelToFile(novel);
+                finally {
+                    NovelCacheService.SaveNovelToFile(novel);
+                }
             });
         }
 

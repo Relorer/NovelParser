@@ -64,30 +64,24 @@ namespace NovelParserBLL.FileGenerators.PDF
 
         private static Image ResizeImage(Image imgToResize, Size size)
         {
-            //Get the image current width  
             int sourceWidth = imgToResize.Width;
-            //Get the image current height  
             int sourceHeight = imgToResize.Height;
-            //Calulate  width with new desired size  
+
             float nPercentW = size.Width / (float)sourceWidth;
-            //Calculate height with new desired size  
             float nPercentH = size.Height / (float)sourceHeight;
-            float nPercent;
-            if (nPercentH < nPercentW)
-                nPercent = nPercentH;
-            else
-                nPercent = nPercentW;
-            //New Width  
+
+            float nPercent = nPercentH < nPercentW ? nPercentH : nPercentW;
+
             int destWidth = (int)(sourceWidth * nPercent);
-            //New Height  
             int destHeight = (int)(sourceHeight * nPercent);
-            Bitmap b = new Bitmap(destWidth, destHeight);
-            Graphics g = Graphics.FromImage((System.Drawing.Image)b);
-            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-            // Draw image with new width and height  
-            g.DrawImage(imgToResize, 0, 0, destWidth, destHeight);
-            g.Dispose();
-            return b;
+
+            Bitmap resultBitmap = new Bitmap(destWidth, destHeight);
+            Graphics resultGraphics = Graphics.FromImage(resultBitmap);
+            resultGraphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+            resultGraphics.DrawImage(imgToResize, 0, 0, destWidth, destHeight);
+            resultGraphics.Dispose();
+
+            return resultBitmap;
         }
     }
 }

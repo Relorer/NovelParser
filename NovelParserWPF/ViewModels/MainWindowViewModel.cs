@@ -169,6 +169,7 @@ namespace NovelParserWPF.ViewModels
         }
         private async Task ParseNovel(Novel novel, CancellationToken cancellationToken)
         {
+            ProgressValueProgressButton = 0;
             await ranobelib.ParseAndLoadChapters(novel, ChaptersToDownload, IncludeImages, SetProgressValueProgressButton, cancellationToken);
             if (cancellationToken.IsCancellationRequested) return;
             await FileGenerator.Generate(SavePath, GetSelectedFileFormat(), novel, ChaptersToDownload);
