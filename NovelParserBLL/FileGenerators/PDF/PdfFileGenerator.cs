@@ -2,6 +2,7 @@
 using PdfSharp;
 using PdfSharp.Drawing;
 using PdfSharp.Pdf;
+using PdfSharp.Pdf.IO;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Text;
@@ -20,36 +21,48 @@ namespace NovelParserBLL.FileGenerators.PDF
                 var size = chapters.Select(ch => ch.Value.Content.Length).Aggregate((c1, c2) => c1 + c2);
                 var fullHtml = new StringBuilder(size);
 
-                foreach (var chapter in chapters)
-                {
-                    var title = string.IsNullOrEmpty(chapter.Value.Name) ? $"Глава {chapter.Value.Number}" : chapter.Value.Name;
-                    fullHtml.Append($"<h2>{title}</h2>" + chapter.Value.Content);
-                }
+                PdfDocument fullPdf = new PdfDocument();
 
                 var images = new Dictionary<string, byte[]>(chapters.SelectMany(ch => ch.Value.Images));
 
-                PdfDocument pdf = PdfGenerator.GeneratePdf(fullHtml.ToString(), PageSize.A4, imageLoad: (_, e) =>
+                foreach (var chapter in chapters)
                 {
-                    var imgName = e.Src;
-                    using MemoryStream stream = new MemoryStream(images[imgName]);
+                    var title = string.IsNullOrEmpty(chapter.Value.Name) ? $"Глава {chapter.Value.Number}" : chapter.Value.Name;
+                    var content = $"<h2>{title}</h2>" + chapter.Value.Content;
 
-                    Image fullsizeImage = Image.FromStream(stream);
+                    PdfDocument pdf = PdfGenerator.GeneratePdf(content.ToString(), PageSize.A4, imageLoad: (_, e) =>
+                    {
+                        var imgName = e.Src;
+                        using MemoryStream stream = new MemoryStream(images[imgName]);
 
-                    Image newImage = resizeImage(fullsizeImage, new Size(550, 500));
+                        Image fullsizeImage = Image.FromStream(stream);
 
-                    using MemoryStream result = new MemoryStream();
+                        Image newImage = ResizeImage(fullsizeImage, new Size(550, 500));
 
-                    newImage.Save(result, System.Drawing.Imaging.ImageFormat.Png);
+                        using MemoryStream result = new MemoryStream();
 
-                    XImage img = XImage.FromStream(result);
-                    e.Callback(img);
-                });
+                        newImage.Save(result, System.Drawing.Imaging.ImageFormat.Png);
 
-                pdf.Save(file);
+                        XImage img = XImage.FromStream(result);
+                        e.Callback(img);
+                    });
+                    
+                    using (var tempMemoryStream = new MemoryStream())
+                    {
+                        pdf.Save(tempMemoryStream, false);
+                        var openedDoc = PdfReader.Open(tempMemoryStream, PdfDocumentOpenMode.Import);
+                        foreach (PdfPage page in openedDoc.Pages)
+                        {
+                            fullPdf.AddPage(page);
+                        }
+                    }
+                }
+
+                fullPdf.Save(file);
             });
         }
 
-        private static Image resizeImage(Image imgToResize, Size size)
+        private static Image ResizeImage(Image imgToResize, Size size)
         {
             //Get the image current width  
             int sourceWidth = imgToResize.Width;
