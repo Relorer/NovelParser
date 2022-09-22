@@ -1,29 +1,22 @@
 ﻿using NovelParserBLL.Models;
+using NovelParserBLL.Services;
 using PdfSharp;
 using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
 using System.Drawing;
 using System.Drawing.Drawing2D;
-using System.Text;
 using TheArtOfDev.HtmlRenderer.PdfSharp;
 
 namespace NovelParserBLL.FileGenerators.PDF
 {
     internal class PdfFileGenerator : IFileGenerator
     {
-        public FileFormatForGenerator SupportedFileFormat => FileFormatForGenerator.PDF;
-
         public Task Generate(string file, Novel novel, SortedList<int, Chapter> chapters)
         {
             return Task.Run(() =>
             {
-                var size = chapters.Select(ch => ch.Value.Content.Length).Aggregate((c1, c2) => c1 + c2);
-                var fullHtml = new StringBuilder(size);
-
                 PdfDocument fullPdf = new PdfDocument();
-
-                var images = new Dictionary<string, byte[]>(chapters.SelectMany(ch => ch.Value.Images));
 
                 foreach (var chapter in chapters)
                 {
@@ -33,7 +26,7 @@ namespace NovelParserBLL.FileGenerators.PDF
                     PdfDocument pdf = PdfGenerator.GeneratePdf(content.ToString(), PageSize.A4, imageLoad: (_, e) =>
                     {
                         var imgName = e.Src;
-                        using MemoryStream stream = new MemoryStream(images[imgName]);
+                        using MemoryStream stream = new MemoryStream(chapter.Value.Images[imgName]);
 
                         Image fullsizeImage = Image.FromStream(stream);
 
@@ -46,7 +39,7 @@ namespace NovelParserBLL.FileGenerators.PDF
                         XImage img = XImage.FromStream(result);
                         e.Callback(img);
                     });
-                    
+
                     using (var tempMemoryStream = new MemoryStream())
                     {
                         pdf.Save(tempMemoryStream, false);

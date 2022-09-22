@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using NovelParserWPF.DialogWindows;
 using System.Configuration;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NovelParserWPF
 {
@@ -30,7 +26,7 @@ namespace NovelParserWPF
             }
             catch (ConfigurationErrorsException)
             {
-                Console.WriteLine("Error writing app settings");
+                MessageBoxHelper.ShowErrorWindow("Error writing app settings");
             }
         }
 

@@ -1,12 +1,9 @@
 ﻿using DevExpress.Mvvm;
 using DevExpress.Mvvm.CodeGenerators;
-using NovelParserBLL.FileGenerators;
-using NovelParserBLL.FileGenerators.EPUB;
 using NovelParserBLL.Models;
-using NovelParserBLL.Parsers.Ranobelib;
-using NovelParserBLL.Utilities;
+using NovelParserBLL.Services;
+using NovelParserWPF.DialogWindows;
 using NovelParserWPF.Utilities;
-using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using System;
 using System.Collections.Generic;
@@ -23,21 +20,17 @@ namespace NovelParserWPF.ViewModels
     [GenerateViewModel]
     public partial class MainWindowViewModel : ViewModelBase
     {
-        private readonly RanobelibParser ranobelib;
-
         public MainWindowViewModel()
         {
-            ranobelib = new RanobelibParser();
-
             FileFormatsForGenerator = new List<RadioButton>() {
                 new RadioButton() {
                     GroupName = nameof(FileFormatsForGenerator),
-                    Content = FileFormatForGenerator.EPUB,
+                    Content = FileFormat.EPUB,
                     IsChecked = true
                 },
                 new RadioButton() {
                     GroupName = nameof(FileFormatsForGenerator),
-                    Content = FileFormatForGenerator.PDF,
+                    Content = FileFormat.PDF,
                 }
             };
         }
@@ -52,10 +45,9 @@ namespace NovelParserWPF.ViewModels
 
         private SortedList<int, Chapter>? chaptersCurrentTeam => Novel?.ChaptersByTranslationTeam?.GetValueOrDefault(SelectedTranslationTeam, new SortedList<int, Chapter>());
 
-        public SortedList<int, Chapter> ChaptersToDownload => Chapter.GetChaptersByPattern(ListChaptersPattern, chaptersCurrentTeam);
+        public SortedList<int, Chapter> ChaptersToDownload => ChapterHelper.GetChaptersByPattern(ListChaptersPattern, chaptersCurrentTeam);
 
         public BitmapImage? Cover => Novel?.Cover == null ? null : ImageHelper.BitmapImageFromBuffer(Novel.Cover);
-
 
         #region ParsingParams
 
@@ -83,7 +75,7 @@ namespace NovelParserWPF.ViewModels
         [GenerateCommand]
         private void SelectSavePath()
         {
-            SavePath = FileHelper.GetSaveFilePath(SavePath, GetSelectedFileFormat());
+            SavePath = FileDialogHelper.GetSaveFilePath(SavePath, GetSelectedFileFormat());
         }
         private bool CanSelectSavePath() => Novel != null;
 
@@ -145,39 +137,42 @@ namespace NovelParserWPF.ViewModels
                     await ParseNovel(Novel, cancellationToken);
                 }
             }
-            catch (WebDriverArgumentException ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                MessageBoxHelper.ShowErrorWindow(ex.Message);
             }
         }
 
-        public bool CanStartButtonClick => ranobelib.ValidateUrl(NovelLink);
+        public bool CanStartButtonClick => NovelParserService.ValidateUrl(NovelLink);
 
         private async Task GetNovelInfo(CancellationToken cancellationToken)
         {
-            Novel = await ranobelib.ParseAsync(NovelLink, cancellationToken);
+            Novel = await NovelParserService.ParseAsync(NovelLink, cancellationToken);
             if (Novel != null && !string.IsNullOrEmpty(Novel.NameEng))
             {
                 string desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-                SavePath = Path.Combine(desktop, FileSystemHelper.RemoveInvalidFilePathCharacters(Novel.NameEng));
+                SavePath = Path.Combine(desktop, NovelParserBLL.Utilities.FileHelper.RemoveInvalidFilePathCharacters(Novel.NameEng));
                 SelectedTranslationTeam = TranslationTeams.First();
             }
         }
+
         private async Task ParseNovel(Novel novel, CancellationToken cancellationToken)
         {
             ProgressValueProgressButton = 0;
-            await ranobelib.ParseAndLoadChapters(novel, ChaptersToDownload, IncludeImages, SetProgressValueProgressButton, cancellationToken);
+            await NovelParserService.ParseAndLoadChapters(novel, ChaptersToDownload, IncludeImages, SetProgressValueProgressButton, cancellationToken);
             if (cancellationToken.IsCancellationRequested) return;
-            await FileGenerator.Generate(SavePath, GetSelectedFileFormat(), novel, ChaptersToDownload);
+            await FileGeneratorService.Generate(SavePath, GetSelectedFileFormat(), novel, ChaptersToDownload);
         }
 
         private void SetProgressValueProgressButton(int total, int current)
         {
             ProgressValueProgressButton = (int)(current / (double)total * 100);
+        }
+
+        [GenerateCommand]
+        void StartParse()
+        {
+            IsLoadingProgressButton = true;
         }
 
         #endregion
@@ -209,7 +204,7 @@ namespace NovelParserWPF.ViewModels
         private void OpenRanobeLibAuthClick()
         {
             TryCloseAuthDriver();
-            authDriver = ranobelib.OpenAuthPage();
+            authDriver = ChromeDriverHelper.OpenPageWithAutoClose("https://lib.social/login");
         }
         private bool CanOpenRanobeLibAuthClick() => UseCookies;
 
@@ -246,9 +241,9 @@ namespace NovelParserWPF.ViewModels
 
         #endregion
 
-        private FileFormatForGenerator GetSelectedFileFormat()
+        private FileFormat GetSelectedFileFormat()
         {
-            return (FileFormatForGenerator)FileFormatsForGenerator.Find(format => format.IsChecked ?? false)!.Content;
+            return (FileFormat)FileFormatsForGenerator.Find(format => format.IsChecked ?? false)!.Content;
         }
     }
 }

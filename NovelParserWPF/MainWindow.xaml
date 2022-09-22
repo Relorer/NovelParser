@@ -104,7 +104,7 @@
                         IsEnabled="{c:Binding Path=!IsLoadingProgressButton}"
                         Text="{Binding NovelLink, UpdateSourceTrigger=PropertyChanged}">
                         <TextBox.InputBindings>
-                            <KeyBinding Key="Return" Command="{Binding StartButtonClickCommand}" />
+                            <KeyBinding Key="Return" Command="{Binding StartParseCommand}" />
                         </TextBox.InputBindings>
                     </hc:TextBox>
 
@@ -128,7 +128,12 @@
                             IsEnabled="{c:Binding Path=!IsLoadingProgressButton}"
                             Text="{c:Binding ListChaptersPattern,
                                              UpdateSourceTrigger=PropertyChanged}"
-                            ToolTip="Use indexes, not actual chapter numbers" />
+                            ToolTip="Use indexes, not actual chapter numbers">
+
+                            <hc:TextBox.InputBindings>
+                                <KeyBinding Key="Return" Command="{Binding StartParseCommand}" />
+                            </hc:TextBox.InputBindings>
+                        </hc:TextBox>
 
                         <hc:ButtonGroup
                             Margin="5"

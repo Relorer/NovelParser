@@ -2,13 +2,13 @@
 using Newtonsoft.Json;
 using NovelParserBLL.Extensions;
 using NovelParserBLL.Models;
-using NovelParserBLL.Utilities;
+using NovelParserBLL.Services;
 using OpenQA.Selenium.Chrome;
 using System.Text.RegularExpressions;
 
 namespace NovelParserBLL.Parsers.Ranobelib
 {
-    public class RanobelibParser
+    internal class RanobelibParser : INovelParser
     {
         private const string downloadedFileName = "RanobelibParserImg.jpg";
 
@@ -152,7 +152,8 @@ namespace NovelParserBLL.Parsers.Ranobelib
                         }
                     }
                 }
-                finally {
+                finally
+                {
                     NovelCacheService.SaveNovelToFile(novel);
                 }
             });
@@ -269,19 +270,5 @@ namespace NovelParserBLL.Parsers.Ranobelib
             return JsonConvert.DeserializeObject<bool>((string)driver.ExecuteScript(CheckChallengeRunningScript));
         }
 
-        public ChromeDriver OpenAuthPage()
-        {
-            var driver = ChromeDriverHelper.StartChrome(true);
-            driver.GoTo("https://lib.social/login");
-
-            Task.Run(async () =>
-            {
-                await Task.Delay(15 * 60_000);
-                driver?.Close();
-                driver?.Dispose();
-            });
-
-            return driver;
-        }
     }
 }

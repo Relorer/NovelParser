@@ -1,16 +1,18 @@
 ﻿using Newtonsoft.Json;
 using NovelParserBLL.Models;
+using NovelParserBLL.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NovelParserBLL.Utilities
+namespace NovelParserBLL.Services
 {
     public static class NovelCacheService
     {
         private static string cacheFolder = Path.Combine(Directory.GetCurrentDirectory(), "Cache");
+
         static NovelCacheService()
         {
             if (!Directory.Exists(cacheFolder)) Directory.CreateDirectory(cacheFolder);
@@ -19,13 +21,13 @@ namespace NovelParserBLL.Utilities
         public static void SaveNovelToFile(Novel novel)
         {
             string json = JsonConvert.SerializeObject(novel, Formatting.Indented);
-            var path = Path.Combine(cacheFolder, FileSystemHelper.RemoveInvalidFilePathCharacters(novel.URL) + ".json");
+            var path = Path.Combine(cacheFolder, FileHelper.RemoveInvalidFilePathCharacters(novel.URL) + ".json");
             File.WriteAllText(path, json);
         }
 
         public static Novel? TryGetNovelFromFile(string url)
         {
-            var path = Path.Combine(cacheFolder, FileSystemHelper.RemoveInvalidFilePathCharacters(url) + ".json");
+            var path = Path.Combine(cacheFolder, FileHelper.RemoveInvalidFilePathCharacters(url) + ".json");
             if (File.Exists(path))
             {
                 var json = File.ReadAllText(path);
@@ -38,7 +40,7 @@ namespace NovelParserBLL.Utilities
         {
             if (Directory.Exists(cacheFolder))
             {
-                FileSystemHelper.Empty(cacheFolder);
+                DirectoryHelper.Empty(cacheFolder);
             }
         }
     }

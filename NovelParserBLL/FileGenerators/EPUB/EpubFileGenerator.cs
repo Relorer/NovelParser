@@ -1,12 +1,10 @@
-﻿using NovelParserBLL.Models;
-using EpubSharp;
+﻿using EpubSharp;
+using NovelParserBLL.Models;
 
 namespace NovelParserBLL.FileGenerators.EPUB
 {
     internal class EpubFileGenerator : IFileGenerator
     {
-        public FileFormatForGenerator SupportedFileFormat => FileFormatForGenerator.EPUB;
-
         public Task Generate(string file, Novel novel, SortedList<int, Chapter> chapters)
         {
             return Task.Run(() =>

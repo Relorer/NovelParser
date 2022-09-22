@@ -1,9 +1,11 @@
-﻿using OpenQA.Selenium.Chrome;
+﻿using NovelParserBLL.Extensions;
+using NovelParserBLL.Utilities;
+using OpenQA.Selenium.Chrome;
 using Sayaka.Common;
 using System.Configuration;
 using System.Drawing;
 
-namespace NovelParserBLL.Utilities
+namespace NovelParserBLL.Services
 {
     public static class ChromeDriverHelper
     {
@@ -67,8 +69,23 @@ namespace NovelParserBLL.Utilities
         {
             if (Directory.Exists(userDataPath))
             {
-                FileSystemHelper.Empty(userDataPath);
+                DirectoryHelper.Empty(userDataPath);
             }
+        }
+
+        public static ChromeDriver OpenPageWithAutoClose(string url)
+        {
+            var driver = StartChrome(true);
+            driver.GoTo(url);
+
+            Task.Run(async () =>
+            {
+                await Task.Delay(15 * 60_000);
+                driver?.Close();
+                driver?.Dispose();
+            });
+
+            return driver;
         }
     }
 }

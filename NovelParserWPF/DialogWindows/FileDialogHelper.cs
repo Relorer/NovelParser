@@ -1,11 +1,11 @@
 ﻿using Microsoft.Win32;
-using NovelParserBLL.FileGenerators;
+using NovelParserBLL.Services;
 
-namespace NovelParserWPF.Utilities
+namespace NovelParserWPF.DialogWindows
 {
-    internal static class FileHelper
+    internal static class FileDialogHelper
     {
-        public static string GetSaveFilePath(string file, FileFormatForGenerator fileFormat)
+        public static string GetSaveFilePath(string file, FileFormat fileFormat)
         {
             SaveFileDialog saveFileDialog = new SaveFileDialog();
 
@@ -22,10 +22,10 @@ namespace NovelParserWPF.Utilities
             return file;
         }
 
-        private static string GetFileFilterByFilterFormat(FileFormatForGenerator fileFormat) => fileFormat switch
+        private static string GetFileFilterByFilterFormat(FileFormat fileFormat) => fileFormat switch
         {
-            FileFormatForGenerator.EPUB => "EPUB file|*.epub",
-            FileFormatForGenerator.PDF => "PDF file|*.pdf",
+            FileFormat.EPUB => "EPUB file|*.epub",
+            FileFormat.PDF => "PDF file|*.pdf",
             _ => throw new System.NotImplementedException(),
         };
     }
