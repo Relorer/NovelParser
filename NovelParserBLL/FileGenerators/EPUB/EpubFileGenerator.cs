@@ -3,8 +3,10 @@ using EpubSharp;
 
 namespace NovelParserBLL.FileGenerators.EPUB
 {
-    public class EpubFileGenerator : IFileGenerator
+    internal class EpubFileGenerator : IFileGenerator
     {
+        public FileFormatForGenerator SupportedFileFormat => FileFormatForGenerator.EPUB;
+
         public Task Generate(string file, Novel novel, SortedList<int, Chapter> chapters)
         {
             return Task.Run(() =>
@@ -18,7 +20,7 @@ namespace NovelParserBLL.FileGenerators.EPUB
                 foreach (var chapter in chapters)
                 {
                     var title = string.IsNullOrEmpty(chapter.Value.Name) ? $"Глава {chapter.Value.Number}" : chapter.Value.Name;
-                    var content = $"<h2>{title}<h2>" + chapter.Value.Content;
+                    var content = $"<h2>{title}</h2>" + chapter.Value.Content;
                     writer.AddChapter(title, content);
                     foreach (var item in chapter.Value.Images)
                     {
@@ -29,5 +31,6 @@ namespace NovelParserBLL.FileGenerators.EPUB
             });
 
         }
+
     }
 }

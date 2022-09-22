@@ -38,7 +38,6 @@ namespace NovelParserWPF.ViewModels
                 new RadioButton() {
                     GroupName = nameof(FileFormatsForGenerator),
                     Content = FileFormatForGenerator.PDF,
-                    IsEnabled = false
                 }
             };
         }
@@ -164,8 +163,7 @@ namespace NovelParserWPF.ViewModels
             if (Novel != null && !string.IsNullOrEmpty(Novel.NameEng))
             {
                 string desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-                var format = GetSelectedFileFormat() == FileFormatForGenerator.EPUB ? ".epub" : ".pdf";
-                SavePath = Path.Combine(desktop, FileSystemHelper.RemoveInvalidFilePathCharacters(Novel.NameEng) + format);
+                SavePath = Path.Combine(desktop, FileSystemHelper.RemoveInvalidFilePathCharacters(Novel.NameEng));
                 SelectedTranslationTeam = TranslationTeams.First();
             }
         }
@@ -173,7 +171,7 @@ namespace NovelParserWPF.ViewModels
         {
             await ranobelib.ParseAndLoadChapters(novel, ChaptersToDownload, IncludeImages, SetProgressValueProgressButton, cancellationToken);
             if (cancellationToken.IsCancellationRequested) return;
-            await new EpubFileGenerator().Generate(SavePath, novel, ChaptersToDownload);
+            await FileGenerator.Generate(SavePath, GetSelectedFileFormat(), novel, ChaptersToDownload);
         }
 
         private void SetProgressValueProgressButton(int total, int current)
