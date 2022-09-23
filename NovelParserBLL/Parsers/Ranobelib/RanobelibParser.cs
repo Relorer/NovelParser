@@ -1,6 +1,5 @@
 ﻿using AngleSharp.Html.Parser;
 using Newtonsoft.Json;
-using NovelParserBLL.Extensions;
 using NovelParserBLL.Models;
 using NovelParserBLL.Services;
 using OpenQA.Selenium.Chrome;

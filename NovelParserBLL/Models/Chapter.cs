@@ -1,6 +1,4 @@
-﻿using NovelParserBLL.Extensions;
-
-namespace NovelParserBLL.Models
+﻿namespace NovelParserBLL.Models
 {
     public class Chapter
     {

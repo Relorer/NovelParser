@@ -1,12 +1,6 @@
 ﻿using AngleSharp;
-using AngleSharp.Html.Parser;
 using NovelParserBLL.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace NovelParserBLL.Parsers.Kemono
 {
@@ -14,7 +8,6 @@ namespace NovelParserBLL.Parsers.Kemono
     {
         private readonly string kemonoUrl = "https://kemono.party/";
         private readonly string urlPattern = @"https:\/\/kemono\.party\/patreon\/user\/\d*";
-        private readonly HtmlParser parser = new HtmlParser();
 
         public Task ParseAndLoadChapters(Novel novel, SortedList<int, Chapter> chapters, bool includeImages, Action<int, int> setProgress, CancellationToken cancellationToken)
         {
@@ -27,13 +20,20 @@ namespace NovelParserBLL.Parsers.Kemono
             var context = BrowsingContext.New(config);
             var document = await context.OpenAsync(novelUrl);
 
+            var name = kemonoUrl + document.QuerySelector(".user-header__profile")?.InnerHtml;
             var coverUrl = kemonoUrl + document.QuerySelector(".fancy-image__image")?.GetAttribute("src");
             var paginator = document.QuerySelector(".paginator > small")?.TextContent ?? "of 0";
 
             var countPosts = int.Parse(paginator.Substring(paginator.IndexOf("of") + 2).Trim());
 
-            var posts = document.QuerySelectorAll(".post-card__heading > a").Select(el => new { Href = el.GetAttribute("href"), Title = el.TextContent });
+            foreach (var item in document.QuerySelectorAll(".post-card__heading > a"))
+            {
+                var url = kemonoUrl + item.GetAttribute("href");
+                var title = item.TextContent;
 
+            }
+
+            var novel = new Novel(name, name, coverUrl, name, "");
 
             return null;
         }

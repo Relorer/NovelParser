@@ -1,11 +1,6 @@
 ﻿using Newtonsoft.Json;
 using NovelParserBLL.Models;
 using NovelParserBLL.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NovelParserBLL.Services
 {

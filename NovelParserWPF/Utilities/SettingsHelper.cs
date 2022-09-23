@@ -1,7 +1,7 @@
 ﻿using NovelParserWPF.DialogWindows;
 using System.Configuration;
 
-namespace NovelParserWPF
+namespace NovelParserWPF.Utilities
 {
     class SettingsHelper
     {

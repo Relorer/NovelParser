@@ -1,9 +1,7 @@
-﻿using NovelParserBLL.Extensions;
-using NovelParserBLL.Utilities;
+﻿using NovelParserBLL.Utilities;
 using OpenQA.Selenium.Chrome;
 using Sayaka.Common;
 using System.Configuration;
-using System.Drawing;
 
 namespace NovelParserBLL.Services
 {
@@ -73,19 +71,24 @@ namespace NovelParserBLL.Services
             }
         }
 
-        public static ChromeDriver OpenPageWithAutoClose(string url)
+        public static ChromeDriver OpenPageWithAutoClose(string url, int time = 15 * 60_000)
         {
             var driver = StartChrome(true);
             driver.GoTo(url);
 
             Task.Run(async () =>
             {
-                await Task.Delay(15 * 60_000);
+                await Task.Delay(time);
                 driver?.Close();
                 driver?.Dispose();
             });
 
             return driver;
+        }
+
+        public static void GoTo(this ChromeDriver drive, string url)
+        {
+            drive.Navigate().GoToUrl(url);
         }
     }
 }
