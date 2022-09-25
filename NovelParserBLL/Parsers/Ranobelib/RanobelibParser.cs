@@ -9,33 +9,18 @@ namespace NovelParserBLL.Parsers.Ranobelib
 {
     internal class RanobelibParser : INovelParser
     {
-        private const string downloadedFileName = "RanobelibParserImg.jpg";
-
-        private const string GetNovelInfoScript = """
-                                                        return JSON.stringify({
-                                                            NameRus:
-                                                            window.__DATA__.manga.rusName ||
-                                                            window.__DATA__.manga.engName ||
-                                                            window.__DATA__.manga.slug,
-                                                            NameEng:
-                                                            window.__DATA__.manga.engName ||
-                                                            window.__DATA__.manga.rusName ||
-                                                            window.__DATA__.manga.slug,
-                                                            CoverUrl: (
-                                                            document.querySelector(`img[alt='${window.__DATA__.manga.name}']`) ||
-                                                            document.querySelector("img.media-header__cover")
-                                                            )?.src,
-                                                            Author:
-                                                            [...document.querySelectorAll(".media-info-list__item")]
-                                                                .find((item) => item.children[0].innerText === "Автор")
-                                                                ?.children[1].textContent.trim() ?? "No Author",
-                                                            Description: document
-                                                            .querySelector(".media-description__text")
-                                                            ?.textContent.trim(),
-                                                        });
+        private const string checkChallengeRunningScript = """
+                                                    return JSON.stringify(document.querySelector("#challenge-running") !== null)
                                                   """;
 
-        private const string GetChaptersScript = """
+        private const string downloadImgScript = """
+                                                    var a = document.createElement("a");
+                                                    a.href = "{0}";
+                                                    a.download = "{1}";
+                                                    a.click();
+                                                  """;
+
+        private const string getChaptersScript = """
                                                     return (() => {
                                                       const dict = {};
                                                       (window.__DATA__.chapters.branches.length > 0
@@ -53,7 +38,6 @@ namespace NovelParserBLL.Parsers.Ranobelib
                                                                     Name: ch.chapter_name,
                                                                     Url: `https://ranobelib.me/${window.__DATA__.manga.slug}/v${ch.chapter_volume}/c${ch.chapter_number}`,
                                                                     Number: ch.chapter_number,
-                                                                    Index: ch.index,
                                                                   })
                                                               );
                                                             return chapter;
@@ -63,99 +47,124 @@ namespace NovelParserBLL.Parsers.Ranobelib
                                                     })();
                                                   """;
 
-        private const string DownloadImgScript = """
-                                                    var a = document.createElement("a");
-                                                    a.href = "{0}";
-                                                    a.download = "{1}";
-                                                    a.click();
+        private const string getCoverScript = """
+                                                    return (
+                                                      document.querySelector(`img[alt='${window.__DATA__.manga.name}']`) ||
+                                                      document.querySelector("img.media-header__cover")
+                                                    )?.src;
                                                   """;
 
-        private const string CheckChallengeRunningScript = """
-                                                    return JSON.stringify(document.querySelector("#challenge-running") !== null)
+        private const string getNovelInfoScript = """
+                                                        return JSON.stringify({
+                                                            Name:
+                                                            window.__DATA__.manga.engName ||
+                                                            window.__DATA__.manga.rusName ||
+                                                            window.__DATA__.manga.slug,
+                                                            Author:
+                                                            [...document.querySelectorAll(".media-info-list__item")]
+                                                                .find((item) => item.children[0].innerText === "Автор")
+                                                                ?.children[1].textContent.trim() ?? "No Author",
+                                                            Description: document
+                                                            .querySelector(".media-description__text")
+                                                            ?.textContent.trim(),
+                                                        });
                                                   """;
 
         private const string ranobelibUrl = "https://ranobelib.me/";
-
         private readonly HtmlParser parser = new HtmlParser();
 
-        public async Task<Novel?> ParseAsync(string ranobeUrl, CancellationToken cancellationToken)
+        private readonly SetProgress setProgress;
+
+        public RanobelibParser(SetProgress setProgress)
         {
-            return await Task.Run(async () =>
-            {
-                var url = PrepareUrl(ranobeUrl);
-                Novel? novel;
-
-                Novel? novelFromCache = NovelCacheService.TryGetNovelFromFile(url);
-
-                if (cancellationToken.IsCancellationRequested) return null;
-
-                using (var driver = await TryLoadPage(url))
-                {
-                    novel = JsonConvert.DeserializeObject<Novel>((string)driver.ExecuteScript(GetNovelInfoScript));
-
-                    if (novel == null) return novelFromCache;
-
-                    novel.ChaptersByTranslationTeam = JsonConvert.DeserializeObject<Dictionary<string, SortedList<int, Chapter>>>((string)driver.ExecuteScript(GetChaptersScript));
-                }
-
-                if (novelFromCache != null)
-                {
-                    novel.Cover = novelFromCache.Cover;
-                    if (novel.ChaptersByTranslationTeam != null)
-                    {
-                        foreach (var team in novel.ChaptersByTranslationTeam)
-                        {
-                            if (
-                                    novelFromCache.ChaptersByTranslationTeam != null &&
-                                    novelFromCache.ChaptersByTranslationTeam.TryGetValue(team.Key, out SortedList<int, Chapter>? chapters)
-                                )
-                            {
-                                foreach (var item in team.Value)
-                                {
-                                    if (chapters.TryGetValue(item.Key, out Chapter? chapter) && !string.IsNullOrEmpty(chapter.Content))
-                                    {
-                                        item.Value.Content = chapter.Content;
-                                        item.Value.Images = chapter.Images;
-                                        item.Value.ImagesLoaded = chapter.ImagesLoaded;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    if (cancellationToken.IsCancellationRequested) return null;
-                    novel.Cover = await GetImageAsByteArray(novel.CoverUrl);
-                }
-
-                novel.URL = url;
-                NovelCacheService.SaveNovelToFile(novel);
-                return novel;
-            });
+            this.setProgress = setProgress;
         }
 
-        public Task ParseAndLoadChapters(Novel novel, SortedList<int, Chapter> chapters, bool includeImages, Action<int, int> setProgress, CancellationToken cancellationToken)
+        public Task LoadChapters(Novel novel, string group, string pattern, bool includeImages, CancellationToken cancellationToken)
         {
             return Task.Run(async () =>
             {
                 var parsed = 1;
-                try
+                var nonLoadedChapters = novel[group, pattern].Where(ch => string.IsNullOrEmpty(ch.Value.Content) || (ch.Value.ImagesLoaded ^ includeImages)).ToList();
+                foreach (var item in nonLoadedChapters)
                 {
-                    foreach (var item in chapters)
-                    {
-                        if (string.IsNullOrEmpty(item.Value.Content) || (item.Value.ImagesLoaded ^ includeImages))
-                        {
-                            await ParseChapter(item.Value, includeImages, cancellationToken);
-                            setProgress(chapters.Count, parsed++);
-                        }
-                    }
-                }
-                finally
-                {
-                    NovelCacheService.SaveNovelToFile(novel);
+                    await ParseChapter(item.Value, includeImages, cancellationToken);
+                    setProgress(nonLoadedChapters.Count, parsed++);
                 }
             });
+        }
+
+        public async Task<Novel> ParseCommonInfo(Novel novel, CancellationToken cancellationToken)
+        {
+            return await Task.Run(async () =>
+            {
+                Novel? tempNovel;
+
+                var coverUrl = "";
+
+                using (var driver = await TryLoadPage(novel.URL!))
+                {
+                    tempNovel = JsonConvert.DeserializeObject<Novel>((string)driver.ExecuteScript(getNovelInfoScript));
+                    coverUrl = (string)driver.ExecuteScript(getCoverScript);
+
+                    if (tempNovel == null) return novel;
+
+                    tempNovel.ChaptersByGroup = JsonConvert.DeserializeObject<Dictionary<string, SortedList<int, Chapter>>>((string)driver.ExecuteScript(getChaptersScript));
+                }
+
+                novel.Merge(tempNovel);
+
+                if (novel.Cover != null || cancellationToken.IsCancellationRequested) return novel;
+
+                novel.Cover = await GetImageAsByteArray(coverUrl);
+
+                return novel;
+            });
+        }
+
+        public string PrepareUrl(string url)
+        {
+            return ranobelibUrl + Regex.Match(url.Substring(ranobelibUrl.Length), @"[^(?|\/)]*").Value;
+        }
+
+        public bool ValidateUrl(string url)
+        {
+            return url.Length > ranobelibUrl.Length && url.StartsWith(ranobelibUrl) && PrepareUrl(url).Length > ranobelibUrl.Length;
+        }
+
+        private bool CheckChallengeRunning(ChromeDriver driver)
+        {
+            return JsonConvert.DeserializeObject<bool>((string)driver.ExecuteScript(checkChallengeRunningScript));
+        }
+
+        private async Task<byte[]> GetImageAsByteArray(string url)
+        {
+            byte[] result = new byte[0];
+
+            string fileName = Guid.NewGuid().ToString() + ".tmp";
+            string fullPath = ChromeDriverHelper.GetDownloadedPath(fileName);
+
+            if (File.Exists(fullPath)) File.Delete(fullPath);
+
+            using var driver = await TryLoadPage(url);
+
+            driver.ExecuteScript(string.Format(downloadImgScript, url, fileName));
+
+            await Task.Delay(200);
+
+            var attempt = 1;
+            while (!File.Exists(fullPath) || attempt < 4)
+            {
+                await Task.Delay(200 * attempt++);
+            }
+
+            if (File.Exists(fullPath))
+            {
+                result = File.ReadAllBytes(fullPath);
+                File.Delete(fullPath);
+            }
+
+            return result;
         }
 
         private async Task ParseChapter(Chapter chapter, bool includeImages, CancellationToken cancellationToken)
@@ -201,53 +210,12 @@ namespace NovelParserBLL.Parsers.Ranobelib
             chapter.ImagesLoaded = includeImages;
         }
 
-        private async Task<byte[]> GetImageAsByteArray(string url)
-        {
-            byte[] result = new byte[0];
-
-            string fullPath = ChromeDriverHelper.GetDownloadedPath(downloadedFileName);
-
-            if (await DownloadImage(url, downloadedFileName))
-            {
-                result = File.ReadAllBytes(fullPath);
-                File.Delete(fullPath);
-            }
-
-            return result;
-        }
-
-        private async Task<bool> DownloadImage(string url, string name)
-        {
-            var fullPath = ChromeDriverHelper.GetDownloadedPath(name);
-            if (File.Exists(fullPath)) File.Delete(fullPath);
-
-            using var driver = await TryLoadPage(url);
-
-            driver.ExecuteScript(string.Format(DownloadImgScript, url, name));
-            var attempt = 1;
-            while (!File.Exists(fullPath) || attempt < 4)
-            {
-                await Task.Delay(200 * attempt++);
-            }
-            return File.Exists(ChromeDriverHelper.GetDownloadedPath(name));
-        }
-
-        public bool ValidateUrl(string url)
-        {
-            return url.Length > ranobelibUrl.Length && url.StartsWith(ranobelibUrl) && PrepareUrl(url).Length > ranobelibUrl.Length;
-        }
-
-        private string PrepareUrl(string url)
-        {
-            return ranobelibUrl + Regex.Match(url.Substring(ranobelibUrl.Length), @"[^(?|\/)]*").Value;
-        }
-
         private async Task<ChromeDriver> TryLoadPage(string url)
         {
             var driver = ChromeDriverHelper.StartChrome();
             driver.GoTo(url);
-            var attempt = 1;
 
+            var attempt = 1;
             while (CheckChallengeRunning(driver))
             {
                 driver.Dispose();
@@ -263,11 +231,5 @@ namespace NovelParserBLL.Parsers.Ranobelib
 
             return driver;
         }
-
-        private bool CheckChallengeRunning(ChromeDriver driver)
-        {
-            return JsonConvert.DeserializeObject<bool>((string)driver.ExecuteScript(CheckChallengeRunningScript));
-        }
-
     }
 }

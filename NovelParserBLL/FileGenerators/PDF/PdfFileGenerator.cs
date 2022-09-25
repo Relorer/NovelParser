@@ -11,13 +11,13 @@ namespace NovelParserBLL.FileGenerators.PDF
 {
     internal class PdfFileGenerator : IFileGenerator
     {
-        public Task Generate(string file, Novel novel, SortedList<int, Chapter> chapters)
+        public Task Generate(string file, Novel novel, string group, string pattern)
         {
             return Task.Run(() =>
             {
                 PdfDocument fullPdf = new PdfDocument();
 
-                foreach (var chapter in chapters)
+                foreach (var chapter in novel[group, pattern])
                 {
                     var title = string.IsNullOrEmpty(chapter.Value.Name) ? $"Глава {chapter.Value.Number}" : chapter.Value.Name;
                     var content = $"<h2>{title}</h2>" + chapter.Value.Content;

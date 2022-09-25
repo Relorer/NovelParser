@@ -12,17 +12,17 @@ namespace NovelParserBLL.Services
         PDF,
     }
 
-    public static class FileGeneratorService
+    public class FileGeneratorService
     {
-        private static Dictionary<FileFormat, IFileGenerator> fileGenerators = new Dictionary<FileFormat, IFileGenerator>()
+        private Dictionary<FileFormat, IFileGenerator> fileGenerators = new Dictionary<FileFormat, IFileGenerator>()
         {
             {FileFormat.EPUB, new EpubFileGenerator() },
             {FileFormat.PDF, new PdfFileGenerator() }
         };
 
-        public static Task Generate(string file, FileFormat format, Novel novel, SortedList<int, Chapter> chapters)
+        public Task Generate(string file, FileFormat format, Novel novel, string group, string pattern)
         {
-            return fileGenerators[format].Generate(FileHelper.AddFileExtension(file, format), novel, chapters);
+            return fileGenerators[format].Generate(FileHelper.AddFileExtension(file, format), novel, group, pattern);
         }
     }
 }

@@ -4,8 +4,9 @@ namespace NovelParserBLL.Parsers
 {
     internal interface INovelParser
     {
-        Task ParseAndLoadChapters(Novel novel, SortedList<int, Chapter> chapters, bool includeImages, Action<int, int> setProgress, CancellationToken cancellationToken);
-        Task<Novel?> ParseAsync(string novelUrl, CancellationToken cancellationToken);
+        Task LoadChapters(Novel novel, string group, string pattern , bool includeImages, CancellationToken cancellationToken);
+        Task<Novel> ParseCommonInfo(Novel novel, CancellationToken cancellationToken);
         bool ValidateUrl(string url);
+        string PrepareUrl(string url);
     }
 }

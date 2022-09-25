@@ -5,5 +5,5 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-[assembly: SuppressMessage("Interoperability", "CA1416:Проверка совместимости платформы", Justification = "<Ожидание>", Scope = "member", Target = "~M:NovelParserBLL.FileGenerators.PDF.PdfFileGenerator.Generate(System.String,NovelParserBLL.Models.Novel,System.Collections.Generic.SortedList{System.Int32,NovelParserBLL.Models.Chapter})~System.Threading.Tasks.Task")]
+[assembly: SuppressMessage("Interoperability", "CA1416:Проверка совместимости платформы", Justification = "<Ожидание>", Scope = "member", Target = "~M:NovelParserBLL.FileGenerators.PDF.PdfFileGenerator.Generate(System.String,NovelParserBLL.Models.Novel,System.String,System.String)~System.Threading.Tasks.Task")]
 [assembly: SuppressMessage("Interoperability", "CA1416:Проверка совместимости платформы", Justification = "<Ожидание>", Scope = "member", Target = "~M:NovelParserBLL.FileGenerators.PDF.PdfFileGenerator.ResizeImage(System.Drawing.Image,System.Drawing.Size)~System.Drawing.Image")]

@@ -20,8 +20,16 @@ namespace NovelParserWPF.ViewModels
     [GenerateViewModel]
     public partial class MainWindowViewModel : ViewModelBase
     {
+        private readonly NovelCacheService novelCacheService;
+        private readonly CommonNovelParser commonNovelParser;
+        private readonly FileGeneratorService fileGeneratorService;
+
         public MainWindowViewModel()
         {
+            novelCacheService = new NovelCacheService();
+            commonNovelParser = new CommonNovelParser(novelCacheService, SetProgressValueProgressButton);
+            fileGeneratorService = new FileGeneratorService();
+
             FileFormatsForGenerator = new List<RadioButton>() {
                 new RadioButton() {
                     GroupName = nameof(FileFormatsForGenerator),
@@ -39,19 +47,20 @@ namespace NovelParserWPF.ViewModels
 
         public Novel? Novel { get; set; }
 
-        public List<string> TranslationTeams => Novel?.ChaptersByTranslationTeam?.Keys.ToList() ?? new List<string>();
+        public List<string> TranslationTeams => Novel?.ChaptersByGroup?.Keys.ToList() ?? new List<string>();
 
         public int TotalChapters => chaptersCurrentTeam?.Count ?? 0;
 
-        private SortedList<int, Chapter>? chaptersCurrentTeam => Novel?.ChaptersByTranslationTeam?.GetValueOrDefault(SelectedTranslationTeam, new SortedList<int, Chapter>());
+        private SortedList<int, Chapter>? chaptersCurrentTeam => Novel?[SelectedTranslationTeam, "all"];
 
-        public SortedList<int, Chapter> ChaptersToDownload => ChapterHelper.GetChaptersByPattern(ListChaptersPattern, chaptersCurrentTeam);
+        public SortedList<int, Chapter>? ChaptersToDownload => Novel?[SelectedTranslationTeam, ListChaptersPattern];
 
-        public BitmapImage? Cover => Novel?.Cover == null ? null : ImageHelper.BitmapImageFromBuffer(Novel.Cover);
+        public BitmapImage? Cover => Novel?.Cover == null || Novel?.Cover.Length == 0 ? null : ImageHelper.BitmapImageFromBuffer(Novel!.Cover);
 
         #region ParsingParams
 
         private string novelLink = "";
+
         public string NovelLink
         {
             get => novelLink;
@@ -77,9 +86,10 @@ namespace NovelParserWPF.ViewModels
         {
             SavePath = FileDialogHelper.GetSaveFilePath(SavePath, GetSelectedFileFormat());
         }
+
         private bool CanSelectSavePath() => Novel != null;
 
-        #endregion
+        #endregion ParsingParams
 
         #region Parsing
 
@@ -92,6 +102,7 @@ namespace NovelParserWPF.ViewModels
         private Task? loadingTask;
 
         private bool isLoadingProgressButton = false;
+
         public bool IsLoadingProgressButton
         {
             get => isLoadingProgressButton;
@@ -124,6 +135,8 @@ namespace NovelParserWPF.ViewModels
 
         public async Task StartButtonClick(CancellationToken cancellationToken)
         {
+            if (!commonNovelParser.ValidateUrl(NovelLink)) return;
+
             try
             {
                 TryCloseAuthDriver();
@@ -143,15 +156,15 @@ namespace NovelParserWPF.ViewModels
             }
         }
 
-        public bool CanStartButtonClick => NovelParserService.ValidateUrl(NovelLink);
+        public bool CanStartButtonClick => commonNovelParser.ValidateUrl(NovelLink);
 
         private async Task GetNovelInfo(CancellationToken cancellationToken)
         {
-            Novel = await NovelParserService.ParseAsync(NovelLink, cancellationToken);
-            if (Novel != null && !string.IsNullOrEmpty(Novel.NameEng))
+            Novel = await commonNovelParser.ParseCommonInfo(NovelLink, cancellationToken);
+            if (Novel != null && !string.IsNullOrEmpty(Novel.Name))
             {
                 string desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-                SavePath = Path.Combine(desktop, NovelParserBLL.Utilities.FileHelper.RemoveInvalidFilePathCharacters(Novel.NameEng));
+                SavePath = Path.Combine(desktop, NovelParserBLL.Utilities.FileHelper.RemoveInvalidFilePathCharacters(Novel.Name));
                 SelectedTranslationTeam = TranslationTeams.First();
             }
         }
@@ -159,9 +172,9 @@ namespace NovelParserWPF.ViewModels
         private async Task ParseNovel(Novel novel, CancellationToken cancellationToken)
         {
             ProgressValueProgressButton = 0;
-            await NovelParserService.ParseAndLoadChapters(novel, ChaptersToDownload, IncludeImages, SetProgressValueProgressButton, cancellationToken);
+            await commonNovelParser.LoadChapters(novel, SelectedTranslationTeam, ListChaptersPattern, IncludeImages, cancellationToken);
             if (cancellationToken.IsCancellationRequested) return;
-            await FileGeneratorService.Generate(SavePath, GetSelectedFileFormat(), novel, ChaptersToDownload);
+            await fileGeneratorService.Generate(SavePath, GetSelectedFileFormat(), novel, SelectedTranslationTeam, ListChaptersPattern);
         }
 
         private void SetProgressValueProgressButton(int total, int current)
@@ -170,12 +183,12 @@ namespace NovelParserWPF.ViewModels
         }
 
         [GenerateCommand]
-        void StartParse()
+        private void StartParse()
         {
             IsLoadingProgressButton = true;
         }
 
-        #endregion
+        #endregion Parsing
 
         #region LinksCommands
 
@@ -185,7 +198,7 @@ namespace NovelParserWPF.ViewModels
         [GenerateCommand]
         private void OpenRanobeLib() => UrlHelper.OpenUrlInDefaultBrowser("https://ranobelib.me/");
 
-        #endregion
+        #endregion LinksCommands
 
         #region CookiesSettings
 
@@ -206,6 +219,7 @@ namespace NovelParserWPF.ViewModels
             TryCloseAuthDriver();
             authDriver = ChromeDriverHelper.OpenPageWithAutoClose("https://lib.social/login");
         }
+
         private bool CanOpenRanobeLibAuthClick() => UseCookies;
 
         [GenerateCommand]
@@ -214,6 +228,7 @@ namespace NovelParserWPF.ViewModels
             TryCloseAuthDriver();
             ChromeDriverHelper.ClearCookies();
         }
+
         private bool CanClearCookiesClick() => UseCookies;
 
         private void TryCloseAuthDriver()
@@ -222,12 +237,12 @@ namespace NovelParserWPF.ViewModels
             authDriver = null;
         }
 
-        #endregion
+        #endregion CookiesSettings
 
         [GenerateCommand]
         private void ClearCacheClick()
         {
-            NovelCacheService.ClearCache();
+            novelCacheService.ClearCache();
         }
 
         #region CloseWindow
@@ -239,7 +254,7 @@ namespace NovelParserWPF.ViewModels
             cancellationTokenSource?.Dispose();
         }
 
-        #endregion
+        #endregion CloseWindow
 
         private FileFormat GetSelectedFileFormat()
         {

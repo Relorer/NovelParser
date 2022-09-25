@@ -5,7 +5,7 @@ namespace NovelParserBLL.FileGenerators.EPUB
 {
     internal class EpubFileGenerator : IFileGenerator
     {
-        public Task Generate(string file, Novel novel, SortedList<int, Chapter> chapters)
+        public Task Generate(string file, Novel novel, string group, string pattern)
         {
             return Task.Run(() =>
             {
@@ -13,9 +13,9 @@ namespace NovelParserBLL.FileGenerators.EPUB
 
                 writer.AddAuthor(novel.Author);
                 writer.SetCover(novel.Cover, ImageFormat.Png);
-                writer.SetTitle(novel.NameRus);
+                writer.SetTitle(novel.Name);
 
-                foreach (var chapter in chapters)
+                foreach (var chapter in novel[group, pattern])
                 {
                     var title = string.IsNullOrEmpty(chapter.Value.Name) ? $"Глава {chapter.Value.Number}" : chapter.Value.Name;
                     var content = $"<h2>{title}</h2>" + chapter.Value.Content;
