@@ -17,7 +17,16 @@ namespace NovelParserBLL.FileGenerators.PDF
             {
                 PdfDocument fullPdf = new PdfDocument();
 
-                foreach (var chapter in novel[group, pattern])
+                var chaptersWithCover = new SortedList<int, Chapter>(novel[group, pattern]);
+                chaptersWithCover.Add(-1, new Chapter() { 
+                    Name = "Cover", 
+                    Content = "<img src=\"cover\"/>", 
+                    Images = new Dictionary<string, byte[]>() { 
+                        { "cover", novel.Cover! } 
+                    } 
+                });
+
+                foreach (var chapter in chaptersWithCover)
                 {
                     var title = string.IsNullOrEmpty(chapter.Value.Name) ? $"Глава {chapter.Value.Number}" : chapter.Value.Name;
                     var content = $"<h2>{title}</h2>" + chapter.Value.Content;
