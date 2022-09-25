@@ -248,7 +248,7 @@
                                         Margin="5"
                                         HorizontalAlignment="Left"
                                         Style="{StaticResource TextBlockDefault}"
-                                        Text="{Binding Novel.NameEng}"
+                                        Text="{Binding Novel.Name}"
                                         TextTrimming="CharacterEllipsis" />
                                     <TextBlock
                                         Margin="5,2"
