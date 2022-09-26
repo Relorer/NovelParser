@@ -34,6 +34,8 @@ namespace NovelParserBLL.FileGenerators.PDF
                     PdfDocument pdf = PdfGenerator.GeneratePdf(content.ToString(), PageSize.A4, imageLoad: (_, e) =>
                     {
                         var imgName = e.Src;
+                        if (chapter.Value.Images[imgName] == null || chapter.Value.Images[imgName].Length == 0) return;
+
                         using MemoryStream stream = new MemoryStream(chapter.Value.Images[imgName]);
 
                         Image fullsizeImage = Image.FromStream(stream);

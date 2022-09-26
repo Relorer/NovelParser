@@ -195,6 +195,7 @@ namespace NovelParserBLL.Parsers.Ranobelib
                             var name = Guid.NewGuid().ToString();
                             chapter.Images.Add(name, await image);
                             item.SetAttribute("src", name);
+                            item.RemoveAttribute("data-src");
                         }
                     }
                     else
