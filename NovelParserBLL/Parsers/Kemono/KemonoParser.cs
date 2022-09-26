@@ -50,7 +50,7 @@ namespace NovelParserBLL.Parsers.Kemono
                     chapter.Value.Content = doc.QuerySelector(".post__body")?.InnerHtml ?? "";
                     if (string.IsNullOrEmpty(chapter.Value.Content)) chapter.Value.Name += " <Not loaded>";
 
-                    if (includeImages) await LoadImage(chapter.Value);
+                    await UpdateImages(chapter.Value, includeImages);
                     setProgress(nonLoadedChapters.Count, i++);
 
                     if (cancellationToken.IsCancellationRequested) return;
@@ -93,7 +93,7 @@ namespace NovelParserBLL.Parsers.Kemono
             return novel;
         }
 
-        private async Task LoadImage(Chapter chapter)
+        private async Task UpdateImages(Chapter chapter, bool includeImages)
         {
             var content = chapter.Content;
 
@@ -103,36 +103,51 @@ namespace NovelParserBLL.Parsers.Kemono
 
                 foreach (var img in doc.QuerySelectorAll("img"))
                 {
-                    string? url = img.GetAttribute("src");
-
-                    if (!string.IsNullOrEmpty(url))
+                    if (includeImages)
                     {
-                        var image = await GetImg(kemonoUrl + img.GetAttribute("src"));
-                        var name = Guid.NewGuid().ToString();
-                        chapter.Images.Add(name, image);
-                        img.SetAttribute("src", name);
-                        img.RemoveAttribute("data-src");
+                        string? url = img.GetAttribute("src");
+
+                        if (!string.IsNullOrEmpty(url))
+                        {
+                            var image = await GetImg(kemonoUrl + img.GetAttribute("src"));
+                            var name = Guid.NewGuid().ToString();
+                            chapter.Images.Add(name, image);
+                            img.SetAttribute("src", name);
+                            img.RemoveAttribute("data-src");
+                        }
+                    }
+                    else
+                    {
+                        img.Remove();
                     }
                 }
 
                 foreach (var a in doc.QuerySelectorAll(".fileThumb"))
                 {
-                    string? href = a.GetAttribute("href");
-
-                    if (!string.IsNullOrEmpty(href))
+                    if (includeImages)
                     {
-                        if (href.StartsWith("/data"))
+                        string? href = a.GetAttribute("href");
+
+                        if (!string.IsNullOrEmpty(href))
                         {
-                            href = kemonoUrl + href;
+                            if (href.StartsWith("/data"))
+                            {
+                                href = kemonoUrl + href;
+                            }
+                            a.SetAttribute("href", href);
                         }
-                        a.SetAttribute("href", href);
                     }
+                    else
+                    {
+                        a.Remove();
+                    }
+                    
                 }
 
                 chapter.Content = doc.Body?.InnerHtml ?? "";
             }
 
-            chapter.ImagesLoaded = true;
+            chapter.ImagesLoaded = includeImages;
         }
 
         private string GetName(IDocument doc) => doc.QuerySelector(".user-header__profile")?.TextContent.Trim() ?? "";
