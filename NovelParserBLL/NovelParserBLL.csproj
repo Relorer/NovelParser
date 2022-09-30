@@ -23,6 +23,7 @@
     <PackageReference Include="HtmlRenderer.PdfSharp.NetStandard2" Version="1.5.1.1" />
     <PackageReference Include="Selenium.WebDriver" Version="4.4.0" />
     <PackageReference Include="Selenium.WebDriver.ChromeDriver" Version="105.0.5195.5200" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="2.1.3" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.1" />
   </ItemGroup>
 

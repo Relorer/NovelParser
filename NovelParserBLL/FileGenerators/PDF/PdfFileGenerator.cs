@@ -3,8 +3,8 @@ using PdfSharp;
 using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
-using System.Drawing;
-using System.Drawing.Drawing2D;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
 using TheArtOfDev.HtmlRenderer.PdfSharp;
 
 namespace NovelParserBLL.FileGenerators.PDF
@@ -36,15 +36,12 @@ namespace NovelParserBLL.FileGenerators.PDF
                         var imgName = e.Src;
                         if (chapter.Value.Images[imgName] == null || chapter.Value.Images[imgName].Length == 0) return;
 
-                        using MemoryStream stream = new MemoryStream(chapter.Value.Images[imgName]);
-
-                        Image fullsizeImage = Image.FromStream(stream);
-
-                        Image newImage = ResizeImage(fullsizeImage, new Size(550, 500));
+                        Image fullsizeImage = Image.Load(chapter.Value.Images[imgName]);
 
                         using MemoryStream result = new MemoryStream();
 
-                        newImage.Save(result, System.Drawing.Imaging.ImageFormat.Png);
+                        fullsizeImage.Mutate(i => i.Resize(550, 500));
+                        fullsizeImage.SaveAsPng(result);
 
                         XImage img = XImage.FromStream(result);
                         e.Callback(img);
@@ -65,26 +62,5 @@ namespace NovelParserBLL.FileGenerators.PDF
             });
         }
 
-        private static Image ResizeImage(Image imgToResize, Size size)
-        {
-            int sourceWidth = imgToResize.Width;
-            int sourceHeight = imgToResize.Height;
-
-            float nPercentW = size.Width / (float)sourceWidth;
-            float nPercentH = size.Height / (float)sourceHeight;
-
-            float nPercent = nPercentH < nPercentW ? nPercentH : nPercentW;
-
-            int destWidth = (int)(sourceWidth * nPercent);
-            int destHeight = (int)(sourceHeight * nPercent);
-
-            Bitmap resultBitmap = new Bitmap(destWidth, destHeight);
-            Graphics resultGraphics = Graphics.FromImage(resultBitmap);
-            resultGraphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-            resultGraphics.DrawImage(imgToResize, 0, 0, destWidth, destHeight);
-            resultGraphics.Dispose();
-
-            return resultBitmap;
-        }
     }
 }
