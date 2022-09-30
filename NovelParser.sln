@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.2.32616.157
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NovelParserBLL", "NovelParserBLL\NovelParserBLL.csproj", "{B8763F51-B8B7-46A6-944E-FFD7EA7BF5FD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NovelParserBLL", "NovelParserBLL\NovelParserBLL.csproj", "{B8763F51-B8B7-46A6-944E-FFD7EA7BF5FD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NovelParserWPF", "NovelParserWPF\NovelParserWPF.csproj", "{70FA83F8-716E-4A9A-BEC1-6CA4B6457409}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NovelParserWPF", "NovelParserWPF\NovelParserWPF.csproj", "{70FA83F8-716E-4A9A-BEC1-6CA4B6457409}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NovelParserBLLTests", "NovelParserBLLTests\NovelParserBLLTests.csproj", "{77CC6381-193E-4EEB-8CAC-9C2CB5B1AB63}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{70FA83F8-716E-4A9A-BEC1-6CA4B6457409}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{70FA83F8-716E-4A9A-BEC1-6CA4B6457409}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{70FA83F8-716E-4A9A-BEC1-6CA4B6457409}.Release|Any CPU.Build.0 = Release|Any CPU
+		{77CC6381-193E-4EEB-8CAC-9C2CB5B1AB63}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77CC6381-193E-4EEB-8CAC-9C2CB5B1AB63}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77CC6381-193E-4EEB-8CAC-9C2CB5B1AB63}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77CC6381-193E-4EEB-8CAC-9C2CB5B1AB63}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
