@@ -2,7 +2,7 @@
 
 namespace NovelParserWPF.DialogWindows
 {
-    static class MessageBoxHelper
+    internal static class MessageBoxHelper
     {
         public static void ShowErrorWindow(string message)
         {

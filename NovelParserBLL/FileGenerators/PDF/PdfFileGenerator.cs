@@ -1,11 +1,4 @@
 ﻿using NovelParserBLL.Models;
-using PdfSharp;
-using PdfSharp.Drawing;
-using PdfSharp.Pdf;
-using PdfSharp.Pdf.IO;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Processing;
-using TheArtOfDev.HtmlRenderer.PdfSharp;
 
 namespace NovelParserBLL.FileGenerators.PDF
 {
@@ -15,52 +8,51 @@ namespace NovelParserBLL.FileGenerators.PDF
         {
             return Task.Run(() =>
             {
-                PdfDocument fullPdf = new PdfDocument();
+                //PdfDocument fullPdf = new PdfDocument();
 
-                var chaptersWithCover = new SortedList<int, Chapter>(novel[group, pattern]);
-                chaptersWithCover.Add(-1, new Chapter() { 
-                    Name = "Cover", 
-                    Content = "<img src=\"cover\"/>", 
-                    Images = new Dictionary<string, byte[]>() { 
-                        { "cover", novel.Cover! } 
-                    } 
-                });
+                //var chaptersWithCover = new SortedList<int, Chapter>(novel[group, pattern]);
+                //chaptersWithCover.Add(-1, new Chapter() {
+                //    Name = "Cover",
+                //    Content = "<img src=\"cover\"/>",
+                //    Images = new Dictionary<string, byte[]>() {
+                //        { "cover", novel.Cover! }
+                //    }
+                //});
 
-                foreach (var chapter in chaptersWithCover)
-                {
-                    var title = string.IsNullOrEmpty(chapter.Value.Name) ? $"Глава {chapter.Value.Number}" : chapter.Value.Name;
-                    var content = $"<h2>{title}</h2>" + chapter.Value.Content;
+                //foreach (var chapter in chaptersWithCover)
+                //{
+                //    var title = string.IsNullOrEmpty(chapter.Value.Name) ? $"Глава {chapter.Value.Number}" : chapter.Value.Name;
+                //    var content = $"<h2>{title}</h2>" + chapter.Value.Content;
 
-                    PdfDocument pdf = PdfGenerator.GeneratePdf(content.ToString(), PageSize.A4, imageLoad: (_, e) =>
-                    {
-                        var imgName = e.Src;
-                        if (chapter.Value.Images[imgName] == null || chapter.Value.Images[imgName].Length == 0) return;
+                //    PdfDocument pdf = PdfGenerator.GeneratePdf(content.ToString(), PageSize.A4, imageLoad: (_, e) =>
+                //    {
+                //        var imgName = e.Src;
+                //        if (chapter.Value.Images[imgName] == null || chapter.Value.Images[imgName].Length == 0) return;
 
-                        Image fullsizeImage = Image.Load(chapter.Value.Images[imgName]);
+                //        Image image = Image.Load(chapter.Value.Images[imgName]);
 
-                        using MemoryStream result = new MemoryStream();
+                //        using MemoryStream result = new MemoryStream();
 
-                        fullsizeImage.Mutate(i => i.Resize(550, 500));
-                        fullsizeImage.SaveAsPng(result);
+                //        image.Mutate(i => i.Resize(550, 550 / image.Width * image.Height));
+                //        image.SaveAsPng(result);
 
-                        XImage img = XImage.FromStream(result);
-                        e.Callback(img);
-                    });
+                //        XImage img = XImage.FromStream(result);
+                //        e.Callback(img);
+                //    });
 
-                    using (var tempMemoryStream = new MemoryStream())
-                    {
-                        pdf.Save(tempMemoryStream, false);
-                        var openedDoc = PdfReader.Open(tempMemoryStream, PdfDocumentOpenMode.Import);
-                        foreach (PdfPage page in openedDoc.Pages)
-                        {
-                            fullPdf.AddPage(page);
-                        }
-                    }
-                }
+                //    using (var tempMemoryStream = new MemoryStream())
+                //    {
+                //        pdf.Save(tempMemoryStream, false);
+                //        var openedDoc = PdfReader.Open(tempMemoryStream, PdfDocumentOpenMode.Import);
+                //        foreach (PdfPage page in openedDoc.Pages)
+                //        {
+                //            fullPdf.AddPage(page);
+                //        }
+                //    }
+                //}
 
-                fullPdf.Save(file);
+                //fullPdf.Save(file);
             });
         }
-
     }
 }

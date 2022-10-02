@@ -7,7 +7,7 @@ using NovelParserBLL.Services;
 using Sayaka.Common;
 using System.Text.RegularExpressions;
 
-namespace NovelParserBLL.Parsers.Kemono
+namespace NovelParserBLL.Parsers.kemono
 {
     internal class KemonoParser : INovelParser
     {
@@ -32,7 +32,7 @@ namespace NovelParserBLL.Parsers.Kemono
             return Task.Run(async () =>
             {
                 int i = 1;
-                var nonLoadedChapters = novel[group, pattern].Where(ch => string.IsNullOrEmpty(ch.Value.Content) || (ch.Value.ImagesLoaded ^ includeImages)).ToList();
+                var nonLoadedChapters = novel[group, pattern].Where(ch => string.IsNullOrEmpty(ch.Value.Content) || ch.Value.ImagesLoaded ^ includeImages).ToList();
 
                 foreach (var chapter in nonLoadedChapters)
                 {
@@ -88,7 +88,7 @@ namespace NovelParserBLL.Parsers.Kemono
             novel.Author = author;
             novel.Name = $"{author}'s Kemono";
             novel.ChaptersByGroup = teams;
-            novel.Cover = await GetImg(coverUrl);
+            //novel.Cover = await GetImg(coverUrl);
 
             return novel;
         }
@@ -111,7 +111,7 @@ namespace NovelParserBLL.Parsers.Kemono
                         {
                             var image = await GetImg(kemonoUrl + img.GetAttribute("src"));
                             var name = Guid.NewGuid().ToString();
-                            chapter.Images.Add(name, image);
+                            //chapter.Images.Add(name, image);
                             img.SetAttribute("src", name);
                             img.RemoveAttribute("data-src");
                         }
@@ -141,7 +141,6 @@ namespace NovelParserBLL.Parsers.Kemono
                     {
                         a.Remove();
                     }
-                    
                 }
 
                 chapter.Content = doc.Body?.InnerHtml ?? "";

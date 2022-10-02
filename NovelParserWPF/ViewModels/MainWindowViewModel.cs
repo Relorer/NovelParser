@@ -2,6 +2,7 @@
 using DevExpress.Mvvm.CodeGenerators;
 using NovelParserBLL.Models;
 using NovelParserBLL.Services;
+using NovelParserBLL.Services.ChromeDriverHelper;
 using NovelParserWPF.DialogWindows;
 using NovelParserWPF.Utilities;
 using OpenQA.Selenium.Chrome;
@@ -55,7 +56,7 @@ namespace NovelParserWPF.ViewModels
 
         public SortedList<int, Chapter>? ChaptersToDownload => Novel?[SelectedTranslationTeam, ListChaptersPattern];
 
-        public BitmapImage? Cover => Novel?.Cover == null || Novel?.Cover.Length == 0 ? null : ImageHelper.BitmapImageFromBuffer(Novel!.Cover);
+        public BitmapImage? Cover => Novel?.Cover?.TryGetByteArray(out byte[]? cover) ?? false ? ImageHelper.BitmapImageFromBuffer(cover!) : null;
 
         #region ParsingParams
 
@@ -68,6 +69,7 @@ namespace NovelParserWPF.ViewModels
             {
                 novelLink = value;
                 Novel = null;
+                ProgressButtonText = "Get";
             }
         }
 
@@ -93,7 +95,7 @@ namespace NovelParserWPF.ViewModels
 
         #region Parsing
 
-        public string ProgressButtonText { get; set; } = "Start";
+        public string ProgressButtonText { get; set; } = "Get";
         public int ProgressValueProgressButton { get; set; } = 0;
         public bool NovelLoadingLock { get; set; } = false;
 
@@ -133,7 +135,7 @@ namespace NovelParserWPF.ViewModels
             }
         }
 
-        public async Task StartButtonClick(CancellationToken cancellationToken)
+        private async Task StartButtonClick(CancellationToken cancellationToken)
         {
             if (!commonNovelParser.ValidateUrl(NovelLink)) return;
 
@@ -151,6 +153,7 @@ namespace NovelParserWPF.ViewModels
                 }
             }
             catch (Exception ex)
+
             {
                 MessageBoxHelper.ShowErrorWindow(ex.Message);
             }

@@ -12,7 +12,12 @@ namespace NovelParserBLL.FileGenerators.EPUB
                 EpubWriter writer = new EpubWriter();
 
                 writer.AddAuthor(novel.Author);
-                writer.SetCover(novel.Cover, ImageFormat.Png);
+
+                if (novel.Cover?.TryGetByteArray(out byte[]? cover) ?? false)
+                {
+                    writer.SetCover(cover, ImageFormat.Png);
+                }
+
                 writer.SetTitle(novel.Name);
 
                 foreach (var chapter in novel[group, pattern])
@@ -22,13 +27,14 @@ namespace NovelParserBLL.FileGenerators.EPUB
                     writer.AddChapter(title, content);
                     foreach (var item in chapter.Value.Images)
                     {
-                        writer.AddFile(item.Key, item.Value, EpubSharp.Format.EpubContentType.ImagePng);
+                        if (item.TryGetByteArray(out byte[]? img))
+                        {
+                            writer.AddFile(item.Name, img, EpubSharp.Format.EpubContentType.ImagePng);
+                        }
                     }
                 }
                 writer.Write(file);
             });
-
         }
-
     }
 }

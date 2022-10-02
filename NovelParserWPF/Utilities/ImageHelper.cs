@@ -1,10 +1,9 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Windows.Media.Imaging;
 
 namespace NovelParserWPF.Utilities
 {
-    class ImageHelper
+    internal class ImageHelper
     {
         public static BitmapImage BitmapImageFromBuffer(byte[] bytes)
         {

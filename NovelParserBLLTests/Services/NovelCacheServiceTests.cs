@@ -16,11 +16,9 @@ namespace NovelParserBLL.Services.Tests
             novelCacheService.SaveNovelToFile(novel);
             var cacheNovel = novelCacheService.TryGetNovelFromFile(novel.URL!)!;
 
-
             Assert.AreEqual(novel.Name, cacheNovel.Name);
             Assert.AreEqual(novel.Description, cacheNovel.Description);
-            Assert.AreEqual(novel.Cover!.Length, cacheNovel.Cover!.Length);
-            Assert.AreEqual(novel.Cover[0], cacheNovel.Cover[0]);
+            Assert.AreEqual(novel.Cover, cacheNovel.Cover);
             Assert.AreEqual(novel.Author, cacheNovel.Author);
 
             Assert.AreEqual(novel.ChaptersByGroup!.Count, cacheNovel.ChaptersByGroup!.Count);

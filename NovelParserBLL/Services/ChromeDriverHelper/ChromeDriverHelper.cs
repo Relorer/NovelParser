@@ -1,13 +1,15 @@
-﻿using NovelParserBLL.Utilities;
+﻿using Newtonsoft.Json;
+using NovelParserBLL.Properties;
+using NovelParserBLL.Utilities;
 using OpenQA.Selenium.Chrome;
 using Sayaka.Common;
 using System.Configuration;
 
-namespace NovelParserBLL.Services
+namespace NovelParserBLL.Services.ChromeDriverHelper
 {
     public static class ChromeDriverHelper
     {
-        public static readonly string DownloadPath = Path.GetTempPath();
+        public static readonly string DownloadPath = Path.Combine(Directory.GetCurrentDirectory(), Resources.CacheFolder);
 
         private static readonly string userDataPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "AppData\\Local\\Google\\Chrome\\User Data\\NovelParser");
@@ -18,16 +20,6 @@ namespace NovelParserBLL.Services
             {
                 DirectoryHelper.Empty(userDataPath);
             }
-        }
-
-        public static string GetDownloadedPath(string fileName)
-        {
-            return Path.Combine(DownloadPath, fileName);
-        }
-
-        public static void GoTo(this ChromeDriver drive, string url)
-        {
-            drive.Navigate().GoToUrl(url);
         }
 
         public static ChromeDriver OpenPageWithAutoClose(string url, int time = 15 * 60_000)
@@ -45,17 +37,30 @@ namespace NovelParserBLL.Services
             return driver;
         }
 
-        public static ChromeDriver StartChrome(bool visible = false)
+        internal static async Task<ChromeDriver> TryLoadPage(string url, string checkChallengeRunningScript = "return false", string downloadFolder = "")
         {
-            var chromeDriverService = ChromeDriverService.CreateDefaultService();
-            chromeDriverService.HideCommandPromptWindow = true;
+            var timeSpan = new TimeSpan(0, 0, 10);
+            var driver = StartChrome(true, downloadFolder, timeSpan);
 
-            var driver = new ChromeDriver(chromeDriverService, GetChromeDriverOptions(visible));
-            driver.ExecuteScript("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})");
+            driver.GoTo(url);
+
+            var attempt = 1;
+            while (JsonConvert.DeserializeObject<bool>((string)driver.ExecuteScript(checkChallengeRunningScript)) && attempt < 4)
+            {
+                driver.Dispose();
+
+                driver = StartChrome(true, downloadFolder, timeSpan);
+                driver.GoTo(url);
+
+                await Task.Delay(attempt++ * 2000);
+            }
+
+            await Task.Delay(attempt * 1000);
+
             return driver;
         }
 
-        private static ChromeOptions GetChromeDriverOptions(bool visible = false)
+        private static ChromeOptions GetChromeDriverOptions(bool visible = false, string downloadFolder = "")
         {
             ChromeOptions? chromeOptions = new ChromeOptions();
             Directory.CreateDirectory(DownloadPath);
@@ -82,8 +87,28 @@ namespace NovelParserBLL.Services
                 chromeOptions.AddArguments(@$"user-data-dir={userDataPath}");
                 chromeOptions.AddArgument("--enable-file-cookies");
             }
-            chromeOptions.AddUserProfilePreference("download.default_directory", DownloadPath);
+            chromeOptions.AddUserProfilePreference("profile.default_content_setting_values.automatic_downloads", 1);
+            chromeOptions.AddUserProfilePreference("download.default_directory", Path.Combine(DownloadPath, downloadFolder));
             return chromeOptions;
+        }
+
+        private static void GoTo(this ChromeDriver drive, string url)
+        {
+            drive.Navigate().GoToUrl(url);
+        }
+
+        private static ChromeDriver StartChrome(bool visible = false, string downloadFolder = "", TimeSpan? timeSpan = null)
+        {
+            var chromeDriverService = ChromeDriverService.CreateDefaultService();
+            chromeDriverService.HideCommandPromptWindow = true;
+
+            var driver = new ChromeDriver(chromeDriverService, GetChromeDriverOptions(visible, downloadFolder));
+            if (timeSpan != null)
+            {
+                driver.Manage().Timeouts().ImplicitWait = timeSpan.Value;
+            }
+            driver.ExecuteScript("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})");
+            return driver;
         }
     }
 }

@@ -1,8 +1,7 @@
-﻿using NovelParserBLL.Extensions;
-using NovelParserBLL.Models;
+﻿using NovelParserBLL.Models;
 using NovelParserBLL.Parsers;
-using NovelParserBLL.Parsers.Kemono;
-using NovelParserBLL.Parsers.Ranobelib;
+using NovelParserBLL.Parsers.kemono;
+using NovelParserBLL.Parsers.libme;
 
 namespace NovelParserBLL.Services
 {
@@ -22,6 +21,9 @@ namespace NovelParserBLL.Services
 
             novelParsers.Add(new RanobelibParser(this.setProgress));
             novelParsers.Add(new KemonoParser(this.setProgress));
+            novelParsers.Add(new MangaLibMeParser(this.setProgress));
+            novelParsers.Add(new HentaiLibMeParser(this.setProgress));
+            novelParsers.Add(new YaoiLibMeParser(this.setProgress));
         }
 
         public async Task LoadChapters(Novel novel, string group, string pattern, bool includeImages, CancellationToken cancellationToken)
@@ -63,6 +65,5 @@ namespace NovelParserBLL.Services
 
             return null;
         }
-
     }
 }

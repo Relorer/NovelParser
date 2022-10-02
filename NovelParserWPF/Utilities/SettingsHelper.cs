@@ -3,7 +3,7 @@ using System.Configuration;
 
 namespace NovelParserWPF.Utilities
 {
-    class SettingsHelper
+    internal class SettingsHelper
     {
         public static void AddOrUpdateAppSettings(string key, string value)
         {
@@ -29,6 +29,5 @@ namespace NovelParserWPF.Utilities
                 MessageBoxHelper.ShowErrorWindow("Error writing app settings");
             }
         }
-
     }
 }

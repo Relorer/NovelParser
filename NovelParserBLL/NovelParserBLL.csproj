@@ -17,6 +17,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Resource Include="Parsers\CheckChallengeRunningScript.js" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="AngleSharp" Version="0.17.1" />
     <PackageReference Include="EpubSharp.dll" Version="1.1.5" />
     <PackageReference Include="FakeUserAgent" Version="1.0.2" />

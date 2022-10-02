@@ -1,4 +1,6 @@
-﻿using NovelParserBLL.Services;
+﻿using NovelParserBLL.Models;
+using NovelParserBLL.Services;
+using NovelParserBLL.Services.ChromeDriverHelper;
 using System.Text.RegularExpressions;
 
 namespace NovelParserBLL.Utilities
@@ -14,7 +16,26 @@ namespace NovelParserBLL.Utilities
         {
             string regexSearch = new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars());
             Regex r = new Regex(string.Format("[{0}]", Regex.Escape(regexSearch)));
-            return r.Replace(filename, replaceChar);
+            var result = r.Replace(filename, replaceChar);
+            return result.Substring(0, Math.Min(result.Length, 100));
+        }
+
+        public static ImageInfo UpdateImageInfo(ImageInfo imageInfo, Novel novel)
+        {
+            if (imageInfo != null && !imageInfo.Exists && !string.IsNullOrEmpty(imageInfo.NameFromURL))
+            {
+                var downloadFolder = Path.Combine(ChromeDriverHelper.DownloadPath, novel.DownloadFolderName);
+                var downloadedImagePath = Path.Combine(downloadFolder, imageInfo.NameFromURL);
+
+                if (File.Exists(downloadedImagePath))
+                {
+                    var result = new ImageInfo(downloadFolder, imageInfo.URL);
+                    File.Move(downloadedImagePath, result.FullPath);
+                    return result;
+                }
+            }
+
+            return imageInfo!;
         }
     }
 }

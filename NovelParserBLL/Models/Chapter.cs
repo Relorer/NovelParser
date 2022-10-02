@@ -6,8 +6,7 @@
         public string? Url { get; set; }
         public string? Number { get; set; }
         public string? Content { get; set; }
-        public Dictionary<string, byte[]> Images { get; set; } = new Dictionary<string, byte[]>();
+        public List<ImageInfo> Images { get; set; } = new List<ImageInfo>();
         public bool ImagesLoaded { get; set; }
-
     }
 }

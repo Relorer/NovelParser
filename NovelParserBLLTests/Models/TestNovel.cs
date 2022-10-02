@@ -11,7 +11,7 @@ namespace NovelParserBLLTests.Models
                 Name = "Test",
                 URL = "Test",
                 Description = "Test",
-                Cover = new byte[1] { 1 },
+                Cover = new ImageInfo("test"),
                 Author = "Test",
                 ChaptersByGroup = new Dictionary<string, SortedList<int, Chapter>>()
                 {

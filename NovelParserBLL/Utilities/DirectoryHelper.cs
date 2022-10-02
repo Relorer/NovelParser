@@ -1,5 +1,4 @@
-﻿
-namespace NovelParserBLL.Utilities
+﻿namespace NovelParserBLL.Utilities
 {
     public class DirectoryHelper
     {

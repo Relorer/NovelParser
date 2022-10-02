@@ -1,12 +1,13 @@
 ﻿using Newtonsoft.Json;
 using NovelParserBLL.Models;
+using NovelParserBLL.Properties;
 using NovelParserBLL.Utilities;
 
 namespace NovelParserBLL.Services
 {
     public class NovelCacheService
     {
-        private static string cacheFolder = Path.Combine(Directory.GetCurrentDirectory(), "cache");
+        private static string cacheFolder = Path.Combine(Directory.GetCurrentDirectory(), Resources.CacheFolder);
 
         static NovelCacheService()
         {
