@@ -86,6 +86,12 @@ namespace NovelParserWPF.ViewModels
         public string FileName => Path.GetFileName(SavePath);
 
         [GenerateCommand]
+        private void ResetNovelLink()
+        {
+            NovelLink = "";
+        }
+
+        [GenerateCommand]
         private void SelectSavePath()
         {
             SavePath = FileDialogHelper.GetSaveFilePath(SavePath, GetSelectedFileFormat());

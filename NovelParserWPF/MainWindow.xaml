@@ -1,13 +1,13 @@
 ﻿<Window
     x:Class="NovelParserWPF.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:Behaviors="http://schemas.microsoft.com/xaml/behaviors"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
-    xmlns:vm="clr-namespace:NovelParserWPF.ViewModels"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:hc="https://handyorg.github.io/handycontrol"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="clr-namespace:NovelParserWPF.ViewModels"
     x:Name="WindowMain"
     Title="NovelParser"
     Width="850"
@@ -111,15 +111,25 @@
 
                 <StackPanel Width="250" DockPanel.Dock="Left">
 
-                    <hc:TextBox
-                        Margin="5"
-                        hc:InfoElement.Placeholder="Link to ranobe"
-                        IsEnabled="{c:Binding Path=!IsLoadingProgressButton}"
-                        Text="{Binding NovelLink, UpdateSourceTrigger=PropertyChanged}">
-                        <TextBox.InputBindings>
-                            <KeyBinding Key="Return" Command="{Binding StartParseCommand}" />
-                        </TextBox.InputBindings>
-                    </hc:TextBox>
+                    <DockPanel LastChildFill="True">
+                        <Button
+                            Margin="5"
+                            Command="{Binding ResetNovelLinkCommand}"
+                            Content="Reset"
+                            DockPanel.Dock="Right"
+                            IsEnabled="{c:Binding Path=!IsLoadingProgressButton}"
+                            Visibility="{c:Binding 'Novel != null',
+                                                   FalseToVisibility=Collapsed}" />
+                        <hc:TextBox
+                            Margin="5"
+                            hc:InfoElement.Placeholder="Link to ranobe"
+                            IsEnabled="{c:Binding Path=!IsLoadingProgressButton}"
+                            Text="{Binding NovelLink, UpdateSourceTrigger=PropertyChanged}">
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Return" Command="{Binding StartParseCommand}" />
+                            </TextBox.InputBindings>
+                        </hc:TextBox>
+                    </DockPanel>
 
                     <StackPanel Visibility="{c:Binding 'TranslationTeams.Count > 0', FalseToVisibility=Collapsed}">
                         <ComboBox
