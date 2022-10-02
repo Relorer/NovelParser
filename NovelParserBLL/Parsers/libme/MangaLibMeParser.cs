@@ -2,12 +2,14 @@
 
 namespace NovelParserBLL.Parsers.libme
 {
-    internal class MangaLibMeParser : ComixLibMeParser
+    internal class MangaLibMeParser : ComicsLibMeParser
     {
         public MangaLibMeParser(SetProgress setProgress) : base(setProgress)
         {
         }
 
-        protected override string domen => "https://mangalib.me/";
+        public override string SiteDomen => "https://mangalib.me/";
+
+        public override string SiteName => "MangaLib.me";
     }
 }

@@ -136,9 +136,9 @@ namespace NovelParserBLL.Properties {
         ///
         ///return getContent();.
         /// </summary>
-        internal static string GetComixContentScript {
+        internal static string GetComicsContentScript {
             get {
-                return ResourceManager.GetString("GetComixContentScript", resourceCulture);
+                return ResourceManager.GetString("GetComicsContentScript", resourceCulture);
             }
         }
         

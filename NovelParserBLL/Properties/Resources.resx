@@ -130,8 +130,8 @@
   <data name="GetChaptersScript" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\parsers\libme\scripts\getchaptersscript.js;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>
-  <data name="GetComixContentScript" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\parsers\libme\scripts\getcomixcontentscript.js;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  <data name="GetComicsContentScript" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\parsers\libme\scripts\getcomicscontentscript.js;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>
   <data name="GetNovelInfoScript" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\parsers\libme\scripts\getnovelinfoscript.js;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>

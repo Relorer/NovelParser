@@ -16,6 +16,10 @@ namespace NovelParserBLL.Parsers.libme
         private static readonly string getChaptersScript = Resources.GetChaptersScript;
         private static readonly string getNovelInfoScript = Resources.GetNovelInfoScript;
 
+        public abstract string SiteDomen { get; }
+
+        public abstract string SiteName { get; }
+
         public BaseLibMeParser(SetProgress setProgress)
         {
             this.setProgress = setProgress;

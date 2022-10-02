@@ -2,13 +2,15 @@
 
 namespace NovelParserBLL.Parsers.libme
 {
-    internal class HentaiLibMeParser : ComixLibMeParser
+    internal class HentaiLibMeParser : ComicsLibMeParser
     {
         public HentaiLibMeParser(SetProgress setProgress) : base(setProgress)
         {
         }
 
-        protected override string domen => "https://hentailib.me/";
+        public override string SiteName => "HentaiLib.me";
+
+        public override string SiteDomen => "https://hentailib.me/";
 
         protected override List<string> servers => new List<string>()
         {

@@ -8,9 +8,9 @@ using System.Text.RegularExpressions;
 
 namespace NovelParserBLL.Parsers.libme
 {
-    internal abstract class ComixLibMeParser : BaseLibMeParser
+    internal abstract class ComicsLibMeParser : BaseLibMeParser
     {
-        private static readonly string getComixContentScript = Resources.GetComixContentScript;
+        private static readonly string getComicsContentScript = Resources.GetComicsContentScript;
 
         protected virtual List<string> servers => new List<string>()
         {
@@ -19,9 +19,7 @@ namespace NovelParserBLL.Parsers.libme
             "https://img4.imgslib.link/",
         };
 
-        protected abstract string domen { get; }
-
-        public ComixLibMeParser(SetProgress setProgress) : base(setProgress)
+        public ComicsLibMeParser(SetProgress setProgress) : base(setProgress)
         {
         }
 
@@ -48,12 +46,12 @@ namespace NovelParserBLL.Parsers.libme
 
         public override string PrepareUrl(string url)
         {
-            return domen + Regex.Match(url.Substring(domen.Length), @"[^(?|\/)]*").Value;
+            return SiteDomen + Regex.Match(url.Substring(SiteDomen.Length), @"[^(?|\/)]*").Value;
         }
 
         public override bool ValidateUrl(string url)
         {
-            return url.Length > domen.Length && url.StartsWith(domen) && PrepareUrl(url).Length > domen.Length;
+            return url.Length > SiteDomen.Length && url.StartsWith(SiteDomen) && PrepareUrl(url).Length > SiteDomen.Length;
         }
 
         private async Task ParseChapter(Novel novel, Chapter chapter)
@@ -63,7 +61,7 @@ namespace NovelParserBLL.Parsers.libme
 
             using (var driver = await ChromeDriverHelper.TryLoadPage(chapter.Url!, checkChallengeRunningScript, downloadFolderName))
             {
-                chapter.Content = (string?)driver.ExecuteScript(getComixContentScript);
+                chapter.Content = (string?)driver.ExecuteScript(getComicsContentScript);
             }
 
             if (chapter.Content != null && chapter.Content.Contains("img"))

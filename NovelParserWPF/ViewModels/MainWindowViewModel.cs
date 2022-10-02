@@ -31,6 +31,8 @@ namespace NovelParserWPF.ViewModels
             commonNovelParser = new CommonNovelParser(novelCacheService, SetProgressValueProgressButton);
             fileGeneratorService = new FileGeneratorService();
 
+            ParserURLs = commonNovelParser.ParserURLs;
+
             FileFormatsForGenerator = new List<RadioButton>() {
                 new RadioButton() {
                     GroupName = nameof(FileFormatsForGenerator),
@@ -198,8 +200,10 @@ namespace NovelParserWPF.ViewModels
         [GenerateCommand]
         private void OpenGitHub() => UrlHelper.OpenUrlInDefaultBrowser("https://github.com/Relorer/NovelParser");
 
+        public Dictionary<string, string> ParserURLs { get; }
+
         [GenerateCommand]
-        private void OpenRanobeLib() => UrlHelper.OpenUrlInDefaultBrowser("https://ranobelib.me/");
+        private void OpenSiteOfParser(string url) => UrlHelper.OpenUrlInDefaultBrowser(url);
 
         #endregion LinksCommands
 
@@ -217,13 +221,13 @@ namespace NovelParserWPF.ViewModels
         private ChromeDriver? authDriver;
 
         [GenerateCommand]
-        private void OpenRanobeLibAuthClick()
+        private void OpenAuthClick(string url)
         {
             TryCloseAuthDriver();
-            authDriver = ChromeDriverHelper.OpenPageWithAutoClose("https://lib.social/login");
+            authDriver = ChromeDriverHelper.OpenPageWithAutoClose(url);
         }
 
-        private bool CanOpenRanobeLibAuthClick() => UseCookies;
+        private bool CanOpenAuthClick(string url) => UseCookies;
 
         [GenerateCommand]
         private void ClearCookiesClick()
@@ -247,6 +251,16 @@ namespace NovelParserWPF.ViewModels
         {
             novelCacheService.ClearCache();
         }
+
+        #region CloseSettings
+
+        [GenerateCommand]
+        private void CloseSettingsHandler()
+        {
+            TryCloseAuthDriver();
+        }
+
+        #endregion CloseSettings
 
         #region CloseWindow
 

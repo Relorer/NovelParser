@@ -11,7 +11,6 @@ namespace NovelParserBLL.Parsers.kemono
 {
     internal class KemonoParser : INovelParser
     {
-        private readonly string kemonoUrl = "https://kemono.party/";
         private readonly string urlPattern = @"https:\/\/kemono\.party\/[a-zA-Z]+\/user\/\d*";
 
         private readonly HtmlParser parser = new HtmlParser();
@@ -26,6 +25,10 @@ namespace NovelParserBLL.Parsers.kemono
 
         private IBrowsingContext context = BrowsingContext.New(Configuration.Default.WithDefaultLoader());
         private DefaultHttpRequester requester = new DefaultHttpRequester();
+
+        public string SiteDomen => "https://kemono.party/";
+
+        public string SiteName => "Kemono";
 
         public Task LoadChapters(Novel novel, string group, string pattern, bool includeImages, CancellationToken cancellationToken)
         {
@@ -109,7 +112,7 @@ namespace NovelParserBLL.Parsers.kemono
 
                         if (!string.IsNullOrEmpty(url))
                         {
-                            var image = await GetImg(kemonoUrl + img.GetAttribute("src"));
+                            var image = await GetImg(SiteDomen + img.GetAttribute("src"));
                             var name = Guid.NewGuid().ToString();
                             //chapter.Images.Add(name, image);
                             img.SetAttribute("src", name);
@@ -132,7 +135,7 @@ namespace NovelParserBLL.Parsers.kemono
                         {
                             if (href.StartsWith("/data"))
                             {
-                                href = kemonoUrl + href;
+                                href = SiteDomen + href;
                             }
                             a.SetAttribute("href", href);
                         }
@@ -151,7 +154,7 @@ namespace NovelParserBLL.Parsers.kemono
 
         private string GetName(IDocument doc) => doc.QuerySelector(".user-header__profile")?.TextContent.Trim() ?? "";
 
-        private string GetCoverUrl(IDocument doc) => kemonoUrl + doc.QuerySelector(".image-link .fancy-image__image")?.GetAttribute("src");
+        private string GetCoverUrl(IDocument doc) => SiteDomen + doc.QuerySelector(".image-link .fancy-image__image")?.GetAttribute("src");
 
         private async Task<byte[]> GetImg(string url)
         {
@@ -193,7 +196,7 @@ namespace NovelParserBLL.Parsers.kemono
                 var page = await context.OpenAsync(url + $"?o={i}");
                 foreach (var item in page.QuerySelectorAll(".post-card__heading > a"))
                 {
-                    var chapterUrl = kemonoUrl + item.GetAttribute("href");
+                    var chapterUrl = SiteDomen + item.GetAttribute("href");
                     var title = item.TextContent;
                     chapters.Add(j, new Chapter() { Name = title, Url = chapterUrl, Content = "", Number = j.ToString() });
                     j--;

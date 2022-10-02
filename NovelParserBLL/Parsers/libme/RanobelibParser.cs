@@ -8,14 +8,17 @@ using System.Text.RegularExpressions;
 
 namespace NovelParserBLL.Parsers.libme
 {
-    internal class RanobelibParser : BaseLibMeParser
+    internal class RanobeLibMeParser : BaseLibMeParser
     {
-        private const string ranobelibUrl = "https://ranobelib.me/";
         private static readonly string getRanobeContentScript = Resources.GetRanobeContentScript;
 
-        public RanobelibParser(SetProgress setProgress) : base(setProgress)
+        public RanobeLibMeParser(SetProgress setProgress) : base(setProgress)
         {
         }
+
+        public override string SiteDomen => "https://ranobelib.me/";
+
+        public override string SiteName => "RanobeLib.me";
 
         public override Task LoadChapters(Novel novel, string group, string pattern, bool includeImages, CancellationToken cancellationToken)
         {
@@ -34,12 +37,12 @@ namespace NovelParserBLL.Parsers.libme
 
         public override string PrepareUrl(string url)
         {
-            return ranobelibUrl + Regex.Match(url.Substring(ranobelibUrl.Length), @"[^(?|\/)]*").Value;
+            return SiteDomen + Regex.Match(url.Substring(SiteDomen.Length), @"[^(?|\/)]*").Value;
         }
 
         public override bool ValidateUrl(string url)
         {
-            return url.Length > ranobelibUrl.Length && url.StartsWith(ranobelibUrl) && PrepareUrl(url).Length > ranobelibUrl.Length;
+            return url.Length > SiteDomen.Length && url.StartsWith(SiteDomen) && PrepareUrl(url).Length > SiteDomen.Length;
         }
 
         private async Task ParseChapter(Novel novel, Chapter chapter, bool includeImages)

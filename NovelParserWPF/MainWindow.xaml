@@ -8,7 +8,7 @@
     xmlns:c="clr-namespace:CalcBinding;assembly=CalcBinding"
     xmlns:vm="clr-namespace:NovelParserWPF.ViewModels"
     xmlns:hc="https://handyorg.github.io/handycontrol"
-    Name="WindowMain"
+    x:Name="WindowMain"
     Title="NovelParser"
     Width="850"
     Height="500"
@@ -20,6 +20,10 @@
     <Behaviors:Interaction.Triggers>
         <Behaviors:EventTrigger EventName="Closed" SourceObject="{Binding ElementName=WindowMain}">
             <Behaviors:InvokeCommandAction Command="{Binding CloseWindowHandlerCommand}" />
+        </Behaviors:EventTrigger>
+
+        <Behaviors:EventTrigger EventName="Closed" SourceObject="{Binding ElementName=SettingsDrawer}">
+            <Behaviors:InvokeCommandAction Command="{Binding CloseSettingsHandlerCommand}" />
         </Behaviors:EventTrigger>
     </Behaviors:Interaction.Triggers>
 
@@ -33,44 +37,56 @@
             Name="SettingsDrawer"
             Dock="Left"
             ShowMode="Push">
-            <Border
-                Width="200"
-                Padding="12"
-                Background="{DynamicResource RegionBrush}"
-                BorderBrush="{DynamicResource BorderBrush}"
-                BorderThickness="0,1,0,0">
-                <StackPanel>
-                    <hc:Divider
-                        Margin="5"
-                        Content="Authorizations"
-                        Opacity="0.55" />
-                    <Button
-                        Margin="5"
-                        HorizontalAlignment="Stretch"
-                        Command="{Binding OpenRanobeLibAuthClickCommand}"
-                        Content="RanobeLib.me"
-                        IsEnabled="{c:Binding Path=!IsLoadingProgressButton}" />
-                    <Button
-                        Margin="5"
-                        HorizontalAlignment="Stretch"
-                        Command="{Binding ClearCookiesClickCommand}"
-                        Content="Clear cookies"
-                        IsEnabled="{c:Binding Path=!IsLoadingProgressButton}" />
-                    <CheckBox
-                        Margin="5"
-                        Content="Use cookies"
-                        IsChecked="{Binding UseCookies}" />
-                    <hc:Divider
-                        Margin="5,10,5,5"
-                        Content="Cache"
-                        Opacity="0.55" />
-                    <Button
-                        Margin="5"
-                        HorizontalAlignment="Stretch"
-                        Command="{Binding ClearCacheClickCommand}"
-                        Content="Clear cache" />
-                </StackPanel>
-            </Border>
+            <hc:ScrollViewer IsInertiaEnabled="True">
+                <Border
+                    Width="200"
+                    Padding="12"
+                    Background="{DynamicResource RegionBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="0,1,0,0">
+                    <StackPanel>
+                        <hc:Divider
+                            Margin="5"
+                            Content="Authorizations"
+                            Opacity="0.55" />
+
+                        <ItemsControl x:Name="AuthLinkButtons" ItemsSource="{Binding ParserURLs}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button
+                                        Margin="5"
+                                        HorizontalAlignment="Stretch"
+                                        Command="{Binding Source={x:Reference Name=WindowMain}, Path=DataContext.OpenAuthClickCommand}"
+                                        CommandParameter="{Binding Path=Value}"
+                                        Content="{Binding Path=Key}"
+                                        IsEnabled="{c:Binding Source={x:Reference Name=WindowMain},
+                                                              Path=!DataContext.IsLoadingProgressButton}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <Button
+                            Margin="5"
+                            HorizontalAlignment="Stretch"
+                            Command="{Binding ClearCookiesClickCommand}"
+                            Content="Clear cookies"
+                            IsEnabled="{c:Binding Path=!IsLoadingProgressButton}" />
+                        <CheckBox
+                            Margin="5"
+                            Content="Use cookies"
+                            IsChecked="{Binding UseCookies}" />
+                        <hc:Divider
+                            Margin="5,10,5,5"
+                            Content="Cache"
+                            Opacity="0.55" />
+                        <Button
+                            Margin="5"
+                            HorizontalAlignment="Stretch"
+                            Command="{Binding ClearCacheClickCommand}"
+                            Content="Clear cache" />
+                    </StackPanel>
+                </Border>
+            </hc:ScrollViewer>
         </hc:Drawer>
 
         <DockPanel LastChildFill="True">
@@ -158,15 +174,23 @@
                             Margin="5,10,5,5"
                             Content="Supported"
                             Opacity="0.55" />
-                        <Button
-                            Margin="5"
-                            HorizontalAlignment="Stretch"
-                            Command="{Binding OpenRanobeLibCommand}"
-                            Content="RanobeLib.me" />
+
+                        <ItemsControl ItemsSource="{Binding ParserURLs}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button
+                                        Margin="5"
+                                        HorizontalAlignment="Stretch"
+                                        Command="{Binding ElementName=WindowMain, Path=DataContext.OpenSiteOfParserCommand}"
+                                        CommandParameter="{Binding Path=Value}"
+                                        Content="{Binding Path=Key}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                     </StackPanel>
                 </StackPanel>
             </DockPanel>
-            <Border Padding="12">
+            <Border Padding="2,4,2,4">
                 <Border.Background>
                     <ImageBrush
                         ImageSource="Assets/background.png"
@@ -230,8 +254,8 @@
                             Text="Relorer" />
                     </StackPanel>
 
-                    <ScrollViewer Style="{StaticResource ScrollViewerUpDown}" Visibility="{c:Binding 'Novel != null', FalseToVisibility=Collapsed}">
-                        <StackPanel>
+                    <hc:ScrollViewer IsInertiaEnabled="True" Visibility="{c:Binding 'Novel != null', FalseToVisibility=Collapsed}">
+                        <StackPanel Margin="12">
                             <DockPanel LastChildFill="True">
 
                                 <StackPanel Width="160" DockPanel.Dock="Left">
@@ -292,7 +316,7 @@
                                 TextTrimming="CharacterEllipsis"
                                 TextWrapping="Wrap" />
                         </StackPanel>
-                    </ScrollViewer>
+                    </hc:ScrollViewer>
                 </Grid>
             </Border>
         </DockPanel>

@@ -19,12 +19,14 @@ namespace NovelParserBLL.Services
 
             this.setProgress = setProgress ?? ((int _, int _) => { });
 
-            novelParsers.Add(new RanobelibParser(this.setProgress));
-            novelParsers.Add(new KemonoParser(this.setProgress));
+            novelParsers.Add(new RanobeLibMeParser(this.setProgress));
             novelParsers.Add(new MangaLibMeParser(this.setProgress));
             novelParsers.Add(new HentaiLibMeParser(this.setProgress));
             novelParsers.Add(new YaoiLibMeParser(this.setProgress));
+            novelParsers.Add(new KemonoParser(this.setProgress));
         }
+
+        public Dictionary<string, string> ParserURLs => novelParsers.Select(p => new KeyValuePair<string, string>(p.SiteName, p.SiteDomen)).ToDictionary(x => x.Key, x => x.Value);
 
         public async Task LoadChapters(Novel novel, string group, string pattern, bool includeImages, CancellationToken cancellationToken)
         {

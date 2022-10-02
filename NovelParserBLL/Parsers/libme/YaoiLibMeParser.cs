@@ -2,12 +2,14 @@
 
 namespace NovelParserBLL.Parsers.libme
 {
-    internal class YaoiLibMeParser : ComixLibMeParser
+    internal class YaoiLibMeParser : ComicsLibMeParser
     {
         public YaoiLibMeParser(SetProgress setProgress) : base(setProgress)
         {
         }
 
-        protected override string domen => "https://yaoilib.me/";
+        public override string SiteDomen => "https://yaoilib.me/";
+
+        public override string SiteName => "YaoiLib.me";
     }
 }
