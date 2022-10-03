@@ -3,7 +3,6 @@ using NovelParserBLL.Models;
 using NovelParserBLL.Properties;
 using NovelParserBLL.Services;
 using NovelParserBLL.Services.ChromeDriverHelper;
-using NovelParserBLL.Utilities;
 using System.Text.RegularExpressions;
 
 namespace NovelParserBLL.Parsers.libme
@@ -12,6 +11,10 @@ namespace NovelParserBLL.Parsers.libme
     {
         private static readonly string getComicsContentScript = Resources.GetComicsContentScript;
 
+        public ComicsLibMeParser(SetProgress setProgress) : base(setProgress)
+        {
+        }
+
         protected virtual List<string> servers => new List<string>()
         {
             "https://img3.cdnlib.link/",
@@ -19,27 +22,24 @@ namespace NovelParserBLL.Parsers.libme
             "https://img4.imgslib.link/",
         };
 
-        public ComicsLibMeParser(SetProgress setProgress) : base(setProgress)
-        {
-        }
-
         public override Task LoadChapters(Novel novel, string group, string pattern, bool includeImages, CancellationToken cancellationToken)
         {
             return Task.Run(async () =>
             {
                 var parsed = 1;
-                var nonLoadedChapters = novel[group, pattern].Where(ch => string.IsNullOrEmpty(ch.Value.Content) || !ch.Value.ImagesLoaded && includeImages).ToList();
+                var nonLoadedChapters = novel[group, pattern].ForLoad(includeImages);
+                setProgress(nonLoadedChapters.Count, 0, Resources.ProgressStatusParsing);
                 foreach (var item in nonLoadedChapters)
                 {
                     if (cancellationToken.IsCancellationRequested) return;
-                    await ParseChapter(novel, item.Value);
-                    setProgress(nonLoadedChapters.Count, parsed++);
+                    await ParseChapter(novel, item);
+                    setProgress(nonLoadedChapters.Count, parsed++, Resources.ProgressStatusParsing);
                 }
 
                 if (includeImages)
                 {
                     var allImages = novel[group, pattern].SelectMany(ch => ch.Value.Images).ToList();
-                    await DownloadImages(allImages);
+                    await DownloadImages(allImages, novel.DownloadFolderName, cancellationToken);
                 }
             });
         }
@@ -54,12 +54,49 @@ namespace NovelParserBLL.Parsers.libme
             return url.Length > SiteDomen.Length && url.StartsWith(SiteDomen) && PrepareUrl(url).Length > SiteDomen.Length;
         }
 
+        private async Task DownloadImages(List<ImageInfo> images, string downloadFolderName, CancellationToken cancellationToken)
+        {
+            if (!images.Any()) return;
+
+            var notLoadedImages = images.Where(img => !img.Exists).ToList();
+
+            var serversWithRate = servers.Select(s => new ServerWithRate(s)).ToList();
+
+            var batchSize = 10;
+            setProgress(notLoadedImages.Count, 0, Resources.ProgressStatusImageLoading);
+            for (int i = 0; i < notLoadedImages.Count;)
+            {
+                var batch = notLoadedImages.GetRange(i, Math.Min(batchSize, notLoadedImages.Count - i)).Where(img => !img.Exists);
+
+                foreach (var server in serversWithRate)
+                {
+                    var notLoadedImagesURLs = batch.Select(img => $"{server.Server + img.URL}?name={img.Name}").ToArray();
+
+                    using (var driver = await ChromeDriverHelper.TryLoadPage(server.Server, checkChallengeRunningScript, downloadFolderName))
+                    {
+                        driver.ExecuteScript(downloadImagesScript, notLoadedImagesURLs);
+                    }
+
+                    await Task.Delay(2000);
+
+                    var batchCount = batch.Count();
+                    server.CountImages += notLoadedImagesURLs.Count() - batchCount;
+                    if (batchCount == 0) break;
+                }
+
+                if (cancellationToken.IsCancellationRequested) return;
+
+                i += batchSize;
+
+                setProgress(notLoadedImages.Count, i, Resources.ProgressStatusImageLoading);
+                batchSize = Math.Min(50, batchSize + 10);
+                serversWithRate.Sort((s1, s2) => s2.CountImages - s1.CountImages);
+            }
+        }
+
         private async Task ParseChapter(Novel novel, Chapter chapter)
         {
-            var downloadFolderName = FileHelper.RemoveInvalidFilePathCharacters(novel.URL!);
-            var downloadPath = Path.Combine(ChromeDriverHelper.DownloadPath, downloadFolderName);
-
-            using (var driver = await ChromeDriverHelper.TryLoadPage(chapter.Url!, checkChallengeRunningScript, downloadFolderName))
+            using (var driver = await ChromeDriverHelper.TryLoadPage(chapter.Url!, checkChallengeRunningScript))
             {
                 chapter.Content = (string?)driver.ExecuteScript(getComicsContentScript);
             }
@@ -69,48 +106,24 @@ namespace NovelParserBLL.Parsers.libme
                 (chapter.Content, chapter.Images) = await htmlHelper.LoadImagesForHTML(chapter.Content, (img) =>
                 {
                     string url = img.GetAttribute("src") ?? "";
-                    var imageInfo = new ImageInfo(downloadPath, url);
+                    var imageInfo = new ImageInfo(novel.DownloadFolderName, url);
                     img.SetAttribute("src", imageInfo.Name);
                     return Task.FromResult(imageInfo);
                 });
             }
+
+            chapter.ImagesLoaded = true;
         }
 
-        private async Task DownloadImages(List<ImageInfo> images)
+        private class ServerWithRate
         {
-            if (!images.Any()) return;
-            var firstImg = images.First();
-            var downloadFolderName = Path.GetDirectoryName(firstImg.FullPath)!;
-
-            var notLoadedImages = images.Where(img => !img.Exists);
-
-            foreach (var server in servers)
+            public ServerWithRate(string server)
             {
-                var notLoadedImagesURLs = notLoadedImages.Select(img => server + img.URL).ToArray();
-                var fileNames = notLoadedImages.Select(img => new
-                {
-                    Before = Path.Combine(downloadFolderName, img.NameFromURL),
-                    After = Path.Combine(downloadFolderName, img.Name),
-                }
-                ).ToArray();
-
-                using (var driver = await ChromeDriverHelper.TryLoadPage(server, checkChallengeRunningScript, downloadFolderName))
-                {
-                    driver.ExecuteScript(downloadImagesScript, notLoadedImagesURLs);
-                }
-
-                await Task.Delay(2000);
-
-                foreach (var item in fileNames)
-                {
-                    if (File.Exists(item.Before))
-                    {
-                        File.Move(item.Before, item.After);
-                    }
-                }
-
-                if (images.Exists()) break;
+                Server = server;
             }
+
+            public int CountImages { get; set; }
+            public string Server { get; }
         }
     }
 }

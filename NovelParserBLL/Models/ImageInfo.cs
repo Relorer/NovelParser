@@ -6,7 +6,7 @@ namespace NovelParserBLL.Models
     {
         public ImageInfo(string directory, string url)
         {
-            Name = Guid.NewGuid().ToString();
+            Name = $"{Guid.NewGuid()}.image";
             FullPath = Path.Combine(directory, Name);
             URL = url;
         }

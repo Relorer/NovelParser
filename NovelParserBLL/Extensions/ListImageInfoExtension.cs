@@ -6,6 +6,7 @@ namespace NovelParserBLL.Extensions
     {
         public static bool Exists(this List<ImageInfo> images)
         {
+            if (images.Count == 0) return true;
             return images.Select(img => img.Exists).Aggregate((img1, img2) => img1 && img2);
         }
     }

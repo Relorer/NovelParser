@@ -4,8 +4,7 @@ namespace NovelParserBLL.Parsers
 {
     internal interface INovelParser
     {
-        public string SiteDomen { get; }
-        public string SiteName { get; }
+        public ParserInfo ParserInfo { get; }
 
         Task LoadChapters(Novel novel, string group, string pattern, bool includeImages, CancellationToken cancellationToken);
 

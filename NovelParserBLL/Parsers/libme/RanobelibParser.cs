@@ -25,12 +25,13 @@ namespace NovelParserBLL.Parsers.libme
             return Task.Run(async () =>
             {
                 var parsed = 1;
-                var nonLoadedChapters = novel[group, pattern].Select(v => v.Value).Where(ch => string.IsNullOrEmpty(ch.Content) || (!ch.ImagesLoaded || !ch.Images.Exists()) && includeImages).ToList();
+                var nonLoadedChapters = novel[group, pattern].ForLoad(includeImages);
+                setProgress(nonLoadedChapters.Count, 0, Resources.ProgressStatusParsing);
                 foreach (var item in nonLoadedChapters)
                 {
                     if (cancellationToken.IsCancellationRequested) return;
                     await ParseChapter(novel, item, includeImages);
-                    setProgress(nonLoadedChapters.Count, parsed++);
+                    setProgress(nonLoadedChapters.Count, parsed++, Resources.ProgressStatusParsing);
                 }
             });
         }
@@ -58,7 +59,7 @@ namespace NovelParserBLL.Parsers.libme
                 (chapter.Content, chapter.Images) = await htmlHelper.LoadImagesForHTML(chapter.Content, (img) =>
                 {
                     string url = img.GetAttribute("src") ?? "";
-                    return Task.FromResult(FileHelper.UpdateImageInfo(new ImageInfo("", "", url), novel));
+                    return Task.FromResult(FileHelper.UpdateImageInfo(new ImageInfo("", "", url), novel.DownloadFolderName));
                 });
             }
 

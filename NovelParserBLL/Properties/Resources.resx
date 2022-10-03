@@ -139,4 +139,13 @@
   <data name="GetRanobeContentScript" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\parsers\libme\scripts\getranobecontentscript.js;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>
+  <data name="ProgressStatusImageLoading" xml:space="preserve">
+    <value>Downloading Images</value>
+  </data>
+  <data name="ProgressStatusLoading" xml:space="preserve">
+    <value>Loading</value>
+  </data>
+  <data name="ProgressStatusParsing" xml:space="preserve">
+    <value>Parsing</value>
+  </data>
 </root>

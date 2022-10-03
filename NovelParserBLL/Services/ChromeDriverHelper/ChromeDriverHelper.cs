@@ -39,17 +39,21 @@ namespace NovelParserBLL.Services.ChromeDriverHelper
 
         internal static async Task<ChromeDriver> TryLoadPage(string url, string checkChallengeRunningScript = "return false", string downloadFolder = "")
         {
-            var timeSpan = new TimeSpan(0, 0, 10);
-            var driver = StartChrome(true, downloadFolder, timeSpan);
+            var timeSpan = new TimeSpan(0, 30, 0);
+            var driver = StartChrome(false, downloadFolder, timeSpan);
 
             driver.GoTo(url);
 
+            var check = () => JsonConvert.DeserializeObject<bool>((string)driver.ExecuteScript(checkChallengeRunningScript));
             var attempt = 1;
-            while (JsonConvert.DeserializeObject<bool>((string)driver.ExecuteScript(checkChallengeRunningScript)) && attempt < 4)
+            while (check() && attempt < 4)
             {
+                await Task.Delay(4000);
+
+                if (!check()) break;
                 driver.Dispose();
 
-                driver = StartChrome(true, downloadFolder, timeSpan);
+                driver = StartChrome(false, downloadFolder, timeSpan);
                 driver.GoTo(url);
 
                 await Task.Delay(attempt++ * 2000);
@@ -87,8 +91,11 @@ namespace NovelParserBLL.Services.ChromeDriverHelper
                 chromeOptions.AddArguments(@$"user-data-dir={userDataPath}");
                 chromeOptions.AddArgument("--enable-file-cookies");
             }
+
+            downloadFolder = string.IsNullOrEmpty(downloadFolder) ? DownloadPath : Path.GetFullPath(downloadFolder);
+            chromeOptions.AddUserProfilePreference("download.default_directory", downloadFolder);
             chromeOptions.AddUserProfilePreference("profile.default_content_setting_values.automatic_downloads", 1);
-            chromeOptions.AddUserProfilePreference("download.default_directory", Path.Combine(DownloadPath, downloadFolder));
+
             return chromeOptions;
         }
 

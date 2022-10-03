@@ -50,17 +50,19 @@
                             Content="Authorizations"
                             Opacity="0.55" />
 
-                        <ItemsControl x:Name="AuthLinkButtons" ItemsSource="{Binding ParserURLs}">
+                        <ItemsControl x:Name="AuthLinkButtons" ItemsSource="{Binding ParserInfos}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Button
                                         Margin="5"
                                         HorizontalAlignment="Stretch"
                                         Command="{Binding Source={x:Reference Name=WindowMain}, Path=DataContext.OpenAuthClickCommand}"
-                                        CommandParameter="{Binding Path=Value}"
-                                        Content="{Binding Path=Key}"
+                                        CommandParameter="{Binding Path=AuthPage}"
+                                        Content="{Binding Path=SiteName}"
                                         IsEnabled="{c:Binding Source={x:Reference Name=WindowMain},
-                                                              Path=!DataContext.IsLoadingProgressButton}" />
+                                                              Path=!DataContext.IsLoadingProgressButton}"
+                                        Visibility="{c:Binding 'AuthPage != \'\'',
+                                                               FalseToVisibility=Collapsed}" />
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
@@ -185,15 +187,15 @@
                             Content="Supported"
                             Opacity="0.55" />
 
-                        <ItemsControl ItemsSource="{Binding ParserURLs}">
+                        <ItemsControl ItemsSource="{Binding ParserInfos}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Button
                                         Margin="5"
                                         HorizontalAlignment="Stretch"
                                         Command="{Binding ElementName=WindowMain, Path=DataContext.OpenSiteOfParserCommand}"
-                                        CommandParameter="{Binding Path=Value}"
-                                        Content="{Binding Path=Key}" />
+                                        CommandParameter="{Binding Path=SiteDomen}"
+                                        Content="{Binding Path=SiteName}" />
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>

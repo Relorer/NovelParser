@@ -130,7 +130,7 @@ namespace NovelParserBLL.Properties {
         /// <summary>
         ///   Looks up a localized string similar to const getContent = () =&gt; {
         ///    return (
-        ///        &quot;&lt;div&gt;&quot; + window.__pg.map((i) =&gt; `&lt;img src=&quot;/manga/${__DATA__.manga.slug}/chapters/${window.__info.current.id}/${i.u}&quot;/&gt;`).join(&quot;&quot;) + &quot;&lt;/div&gt;&quot;
+        ///        &quot;&lt;div&gt;&quot; + window.__pg.map((i) =&gt; `&lt;img src=&quot;${window.__info.img.url}/${i.u}&quot;/&gt;`).join(&quot;&quot;) + &quot;&lt;/div&gt;&quot;
         ///    );
         ///};
         ///
@@ -183,6 +183,33 @@ namespace NovelParserBLL.Properties {
         internal static string GetRanobeContentScript {
             get {
                 return ResourceManager.GetString("GetRanobeContentScript", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Downloading Images.
+        /// </summary>
+        internal static string ProgressStatusImageLoading {
+            get {
+                return ResourceManager.GetString("ProgressStatusImageLoading", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Loading.
+        /// </summary>
+        internal static string ProgressStatusLoading {
+            get {
+                return ResourceManager.GetString("ProgressStatusLoading", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Parsing.
+        /// </summary>
+        internal static string ProgressStatusParsing {
+            get {
+                return ResourceManager.GetString("ProgressStatusParsing", resourceCulture);
             }
         }
     }

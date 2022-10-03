@@ -1,5 +1,6 @@
-﻿const forceDownload = async (url) => {
-    const fileName = url.substring(url.lastIndexOf("/") + 1);
+﻿const forceDownload = async (img) => {
+    const url = img.substring(0, img.lastIndexOf("?name="));
+    const fileName = img.substring(img.lastIndexOf("?name=") + 6);
     await new Promise((resolve) => {
         const img = document.createElement("img");
         img.onload = () => {

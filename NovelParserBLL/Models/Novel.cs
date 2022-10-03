@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using NovelParserBLL.Extensions;
+using NovelParserBLL.Properties;
 using NovelParserBLL.Utilities;
 
 namespace NovelParserBLL.Models
@@ -14,7 +15,7 @@ namespace NovelParserBLL.Models
         public string? URL { get; set; }
 
         [JsonIgnore]
-        public string DownloadFolderName => FileHelper.RemoveInvalidFilePathCharacters(URL ?? "");
+        public string DownloadFolderName => Path.Combine(Resources.CacheFolder, FileHelper.RemoveInvalidFilePathCharacters(URL ?? ""));
 
         public SortedList<int, Chapter> this[string? group, string? pattern]
         {

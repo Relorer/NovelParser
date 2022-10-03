@@ -1,6 +1,6 @@
 ﻿const getContent = () => {
     return (
-        "<div>" + window.__pg.map((i) => `<img src="/manga/${__DATA__.manga.slug}/chapters/${window.__info.current.id}/${i.u}"/>`).join("") + "</div>"
+        "<div>" + window.__pg.map((i) => `<img src="${window.__info.img.url}/${i.u}"/>`).join("") + "</div>"
     );
 };
 

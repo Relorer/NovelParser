@@ -1,6 +1,7 @@
 ﻿using DevExpress.Mvvm;
 using DevExpress.Mvvm.CodeGenerators;
 using NovelParserBLL.Models;
+using NovelParserBLL.Parsers;
 using NovelParserBLL.Services;
 using NovelParserBLL.Services.ChromeDriverHelper;
 using NovelParserWPF.DialogWindows;
@@ -31,7 +32,7 @@ namespace NovelParserWPF.ViewModels
             commonNovelParser = new CommonNovelParser(novelCacheService, SetProgressValueProgressButton);
             fileGeneratorService = new FileGeneratorService();
 
-            ParserURLs = commonNovelParser.ParserURLs;
+            ParserInfos = commonNovelParser.ParserInfos;
 
             FileFormatsForGenerator = new List<RadioButton>() {
                 new RadioButton() {
@@ -138,7 +139,6 @@ namespace NovelParserWPF.ViewModels
                     {
                         IsLoadingProgressButton = false;
                     });
-                    ProgressButtonText = Novel == null ? "Loading" : "Parsing";
                 }
             }
         }
@@ -188,9 +188,10 @@ namespace NovelParserWPF.ViewModels
             await fileGeneratorService.Generate(SavePath, GetSelectedFileFormat(), novel, SelectedTranslationTeam, ListChaptersPattern);
         }
 
-        private void SetProgressValueProgressButton(int total, int current)
+        private void SetProgressValueProgressButton(int total, int current, string status)
         {
             ProgressValueProgressButton = (int)(current / (double)total * 100);
+            ProgressButtonText = status;
         }
 
         [GenerateCommand]
@@ -206,7 +207,7 @@ namespace NovelParserWPF.ViewModels
         [GenerateCommand]
         private void OpenGitHub() => UrlHelper.OpenUrlInDefaultBrowser("https://github.com/Relorer/NovelParser");
 
-        public Dictionary<string, string> ParserURLs { get; }
+        public List<ParserInfo> ParserInfos { get; }
 
         [GenerateCommand]
         private void OpenSiteOfParser(string url) => UrlHelper.OpenUrlInDefaultBrowser(url);

@@ -20,6 +20,8 @@ namespace NovelParserBLL.Parsers.libme
 
         public abstract string SiteName { get; }
 
+        public ParserInfo ParserInfo => new ParserInfo(SiteDomen, SiteName, "https://lib.social/login");
+
         public BaseLibMeParser(SetProgress setProgress)
         {
             this.setProgress = setProgress;
@@ -33,6 +35,8 @@ namespace NovelParserBLL.Parsers.libme
             {
                 Novel? tempNovel;
 
+                setProgress(0, 0, Resources.ProgressStatusLoading);
+
                 using (var driver = await ChromeDriverHelper.TryLoadPage(novel.URL!, checkChallengeRunningScript, novel.DownloadFolderName))
                 {
                     tempNovel = JsonConvert.DeserializeObject<Novel>((string)driver.ExecuteScript(getNovelInfoScript, !(novel.Cover?.Exists ?? false)));
@@ -43,7 +47,7 @@ namespace NovelParserBLL.Parsers.libme
 
                     novel.Merge(tempNovel);
 
-                    novel.Cover = FileHelper.UpdateImageInfo(novel.Cover!, novel);
+                    novel.Cover = FileHelper.UpdateImageInfo(novel.Cover!, novel.DownloadFolderName);
                 }
 
                 return novel;

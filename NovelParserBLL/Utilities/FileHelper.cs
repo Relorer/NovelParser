@@ -1,6 +1,5 @@
 ﻿using NovelParserBLL.Models;
 using NovelParserBLL.Services;
-using NovelParserBLL.Services.ChromeDriverHelper;
 using System.Text.RegularExpressions;
 
 namespace NovelParserBLL.Utilities
@@ -20,22 +19,33 @@ namespace NovelParserBLL.Utilities
             return result.Substring(0, Math.Min(result.Length, 100));
         }
 
-        public static ImageInfo UpdateImageInfo(ImageInfo imageInfo, Novel novel)
+        public static ImageInfo UpdateImageInfo(ImageInfo imageInfo, string downloadFolder)
         {
             if (imageInfo != null && !imageInfo.Exists && !string.IsNullOrEmpty(imageInfo.NameFromURL))
             {
-                var downloadFolder = Path.Combine(ChromeDriverHelper.DownloadPath, novel.DownloadFolderName);
                 var downloadedImagePath = Path.Combine(downloadFolder, imageInfo.NameFromURL);
 
-                if (File.Exists(downloadedImagePath))
+                if (ExistsRelatively(downloadedImagePath))
                 {
-                    var result = new ImageInfo(downloadFolder, imageInfo.URL);
-                    File.Move(downloadedImagePath, result.FullPath);
+                    var result =
+                        !string.IsNullOrEmpty(imageInfo.Name) && !string.IsNullOrEmpty(imageInfo.FullPath) ?
+                        new ImageInfo(imageInfo.FullPath, imageInfo.Name, imageInfo.URL) :
+                        new ImageInfo(downloadFolder, imageInfo.URL);
+
+                    if (!File.Exists(result.FullPath))
+                    {
+                        File.Move(downloadedImagePath, result.FullPath);
+                    }
                     return result;
                 }
             }
 
             return imageInfo!;
+        }
+
+        public static bool ExistsRelatively(string path)
+        {
+            return File.Exists(Path.GetFullPath(path));
         }
     }
 }

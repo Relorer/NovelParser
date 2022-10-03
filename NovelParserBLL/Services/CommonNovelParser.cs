@@ -5,7 +5,7 @@ using NovelParserBLL.Parsers.libme;
 
 namespace NovelParserBLL.Services
 {
-    public delegate void SetProgress(int total, int current);
+    public delegate void SetProgress(int total, int current, string status);
 
     public class CommonNovelParser
     {
@@ -17,7 +17,7 @@ namespace NovelParserBLL.Services
         {
             this.novelCacheService = novelCacheService;
 
-            this.setProgress = setProgress ?? ((int _, int _) => { });
+            this.setProgress = setProgress ?? ((int _, int _, string _) => { });
 
             novelParsers.Add(new RanobeLibMeParser(this.setProgress));
             novelParsers.Add(new MangaLibMeParser(this.setProgress));
@@ -26,7 +26,7 @@ namespace NovelParserBLL.Services
             novelParsers.Add(new KemonoParser(this.setProgress));
         }
 
-        public Dictionary<string, string> ParserURLs => novelParsers.Select(p => new KeyValuePair<string, string>(p.SiteName, p.SiteDomen)).ToDictionary(x => x.Key, x => x.Value);
+        public List<ParserInfo> ParserInfos => novelParsers.Select(p => p.ParserInfo).ToList();
 
         public async Task LoadChapters(Novel novel, string group, string pattern, bool includeImages, CancellationToken cancellationToken)
         {

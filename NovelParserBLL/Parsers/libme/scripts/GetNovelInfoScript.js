@@ -29,10 +29,10 @@ const getInfo = async () => {
             [
                 ...[...document.querySelectorAll(".media-info-list__item")].find(
                     (item) => item.children[0].innerText === "Автор"
-                )?.children[1].children,
+                )?.children[1].children ?? [],
             ]
                 .map((ch) => ch.textContent.trim())
-                .join(", ") ?? "No Author",
+                .join(", ") || "No Author",
         Description: document
             .querySelector(".media-description__text")
             ?.textContent.trim(),
