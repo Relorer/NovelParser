@@ -24,7 +24,9 @@
     <PackageReference Include="AngleSharp" Version="0.17.1" />
     <PackageReference Include="EpubSharp.dll" Version="1.1.5" />
     <PackageReference Include="FakeUserAgent" Version="1.0.2" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.11.46" />
     <PackageReference Include="HtmlRenderer.PdfSharp.NetStandard2" Version="1.5.1.1" />
+    <PackageReference Include="QuestPDF" Version="2022.9.0" />
     <PackageReference Include="Selenium.WebDriver" Version="4.4.0" />
     <PackageReference Include="Selenium.WebDriver.ChromeDriver" Version="105.0.5195.5200" />
     <PackageReference Include="SixLabors.ImageSharp" Version="2.1.3" />
