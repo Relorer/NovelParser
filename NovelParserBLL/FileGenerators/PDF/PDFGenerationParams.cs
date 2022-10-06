@@ -10,7 +10,7 @@ namespace NovelParserBLL.FileGenerators.PDF
 
     public class PDFGenerationParams : GenerationParams
     {
-        public PDFGenerationParams(FileFormat fileFormat, string filePath, Novel novel, string group, string pattern, PDFType pdfType) : base(fileFormat, filePath, novel, group, pattern)
+        public PDFGenerationParams(string filePath, Novel novel, string group, string pattern, PDFType pdfType) : base(filePath, novel, group, pattern)
         {
             this.PDFType = pdfType;
         }

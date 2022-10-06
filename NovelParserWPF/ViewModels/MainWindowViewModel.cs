@@ -192,8 +192,8 @@ namespace NovelParserWPF.ViewModels
 
             GenerationParams generationParams = fileFormat switch
             {
-                FileFormat.EPUB => new EPUBGenerationParams(fileFormat, SavePath, novel, SelectedTranslationTeam, ListChaptersPattern),
-                FileFormat.PDF => new PDFGenerationParams(fileFormat, SavePath, novel, SelectedTranslationTeam, ListChaptersPattern, PDFType.LongPage),
+                FileFormat.EPUB => new EPUBGenerationParams(SavePath, novel, SelectedTranslationTeam, ListChaptersPattern),
+                FileFormat.PDF => new PDFGenerationParams(SavePath, novel, SelectedTranslationTeam, ListChaptersPattern, PDFType.LongPage),
                 _ => throw new NotImplementedException(),
             };
 
