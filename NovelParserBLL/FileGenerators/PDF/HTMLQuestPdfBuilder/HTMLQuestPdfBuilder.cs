@@ -3,11 +3,10 @@ using HtmlAgilityPack;
 using NovelParserBLL.Extensions;
 using NovelParserBLL.Models;
 using QuestPDF.Fluent;
-using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using System.Xml.Linq;
 
-namespace NovelParserBLL.FileGenerators.PDF
+namespace NovelParserBLL.FileGenerators.PDF.HTMLQuestPdfBuilder
 {
     internal abstract class HTMLQuestPdfBuilder
     {
@@ -92,19 +91,19 @@ namespace NovelParserBLL.FileGenerators.PDF
         {
             return elementName switch
             {
-                "h1" => (TextSpanDescriptor span) => span.AddFallbackFontFamily().FontSize(32),
-                "h2" => (TextSpanDescriptor span) => span.AddFallbackFontFamily().FontSize(28),
-                "h3" => (TextSpanDescriptor span) => span.AddFallbackFontFamily().FontSize(24),
-                "h4" => (TextSpanDescriptor span) => span.AddFallbackFontFamily().FontSize(20),
-                "h5" => (TextSpanDescriptor span) => span.AddFallbackFontFamily().FontSize(16),
-                "h6" => (TextSpanDescriptor span) => span.AddFallbackFontFamily().FontSize(12),
-                "b" => (TextSpanDescriptor span) => span.AddFallbackFontFamily().Bold(),
-                "i" => (TextSpanDescriptor span) => span.AddFallbackFontFamily().Italic(),
-                "small" => (TextSpanDescriptor span) => span.AddFallbackFontFamily().Light(),
-                "strike" => (TextSpanDescriptor span) => span.AddFallbackFontFamily().Strikethrough(),
-                "s" => (TextSpanDescriptor span) => span.AddFallbackFontFamily().Strikethrough(),
-                "u" => (TextSpanDescriptor span) => span.AddFallbackFontFamily().Underline(),
-                _ => (TextSpanDescriptor span) => span.AddFallbackFontFamily()
+                "h1" => (span) => span.AddFallbackFontFamily().FontSize(32),
+                "h2" => (span) => span.AddFallbackFontFamily().FontSize(28),
+                "h3" => (span) => span.AddFallbackFontFamily().FontSize(24),
+                "h4" => (span) => span.AddFallbackFontFamily().FontSize(20),
+                "h5" => (span) => span.AddFallbackFontFamily().FontSize(16),
+                "h6" => (span) => span.AddFallbackFontFamily().FontSize(12),
+                "b" => (span) => span.AddFallbackFontFamily().Bold(),
+                "i" => (span) => span.AddFallbackFontFamily().Italic(),
+                "small" => (span) => span.AddFallbackFontFamily().Light(),
+                "strike" => (span) => span.AddFallbackFontFamily().Strikethrough(),
+                "s" => (span) => span.AddFallbackFontFamily().Strikethrough(),
+                "u" => (span) => span.AddFallbackFontFamily().Underline(),
+                _ => (span) => span.AddFallbackFontFamily()
             };
         }
 

@@ -1,14 +1,15 @@
 ﻿using EpubSharp;
-using NovelParserBLL.Models;
 
 namespace NovelParserBLL.FileGenerators.EPUB
 {
-    internal class EpubFileGenerator : IFileGenerator
+    internal class EpubFileGenerator : IFileGenerator<EPUBGenerationParams>
     {
-        public Task Generate(string file, Novel novel, string group, string pattern)
+        public Task Generate(EPUBGenerationParams generationParams)
         {
             return Task.Run(() =>
             {
+                var novel = generationParams.Novel;
+
                 EpubWriter writer = new EpubWriter();
 
                 writer.AddAuthor(novel.Author);
@@ -20,7 +21,7 @@ namespace NovelParserBLL.FileGenerators.EPUB
 
                 writer.SetTitle(novel.Name);
 
-                foreach (var chapter in novel[group, pattern])
+                foreach (var chapter in generationParams.Chapters)
                 {
                     var title = string.IsNullOrEmpty(chapter.Value.Name) ? $"Глава {chapter.Value.Number}" : chapter.Value.Name;
                     var content = $"<h2>{title}</h2>" + chapter.Value.Content;
@@ -33,7 +34,7 @@ namespace NovelParserBLL.FileGenerators.EPUB
                         }
                     }
                 }
-                writer.Write(file);
+                writer.Write(generationParams.FilePath);
             });
         }
     }

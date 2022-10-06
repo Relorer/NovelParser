@@ -44,7 +44,6 @@ namespace NovelParserBLL.Parsers.libme
                     if (tempNovel == null) return novel;
 
                     tempNovel.ChaptersByGroup = JsonConvert.DeserializeObject<Dictionary<string, SortedList<int, Chapter>>>((string)driver.ExecuteScript(getChaptersScript));
-
                     novel.Merge(tempNovel);
 
                     novel.Cover = FileHelper.UpdateImageInfo(novel.Cover!, novel.DownloadFolderName);

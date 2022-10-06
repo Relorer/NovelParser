@@ -4,7 +4,7 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 
-namespace NovelParserBLL.FileGenerators.PDF
+namespace NovelParserBLL.FileGenerators.PDF.HTMLQuestPdfBuilder
 {
     internal class ComicsQuestPdfBuilder : HTMLQuestPdfBuilder
     {

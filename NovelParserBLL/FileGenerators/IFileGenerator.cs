@@ -1,9 +1,7 @@
-﻿using NovelParserBLL.Models;
-
-namespace NovelParserBLL.FileGenerators
+﻿namespace NovelParserBLL.FileGenerators
 {
-    internal interface IFileGenerator
+    internal interface IFileGenerator<T> where T : GenerationParams
     {
-        public Task Generate(string file, Novel novel, string group, string pattern);
+        public Task Generate(T generationParams);
     }
 }

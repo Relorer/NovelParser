@@ -1,28 +1,27 @@
 ﻿using NovelParserBLL.FileGenerators;
 using NovelParserBLL.FileGenerators.EPUB;
 using NovelParserBLL.FileGenerators.PDF;
-using NovelParserBLL.Models;
-using NovelParserBLL.Utilities;
 
 namespace NovelParserBLL.Services
 {
-    public enum FileFormat
-    {
-        EPUB,
-        PDF,
-    }
-
     public class FileGeneratorService
     {
-        private Dictionary<FileFormat, IFileGenerator> fileGenerators = new Dictionary<FileFormat, IFileGenerator>()
-        {
-            {FileFormat.EPUB, new EpubFileGenerator() },
-            {FileFormat.PDF, new PdfFileGenerator() }
-        };
+        private PdfFileGenerator pdfGenerator = new PdfFileGenerator();
+        private EpubFileGenerator epubFileGenerator = new EpubFileGenerator();
 
-        public Task Generate(string file, FileFormat format, Novel novel, string group, string pattern)
+        public Task Generate(GenerationParams generationParams)
         {
-            return fileGenerators[format].Generate(FileHelper.AddFileExtension(file, format), novel, group, pattern);
+            switch (generationParams)
+            {
+                case PDFGenerationParams:
+                    return pdfGenerator.Generate((PDFGenerationParams)generationParams);
+
+                case EPUBGenerationParams:
+                    return epubFileGenerator.Generate((EPUBGenerationParams)generationParams);
+
+                default:
+                    throw new ArgumentException(nameof(generationParams));
+            }
         }
     }
 }

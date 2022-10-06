@@ -1,5 +1,5 @@
 ﻿using Microsoft.Win32;
-using NovelParserBLL.Services;
+using NovelParserBLL.FileGenerators;
 
 namespace NovelParserWPF.DialogWindows
 {

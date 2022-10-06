@@ -1,5 +1,8 @@
 ﻿using DevExpress.Mvvm;
 using DevExpress.Mvvm.CodeGenerators;
+using NovelParserBLL.FileGenerators;
+using NovelParserBLL.FileGenerators.EPUB;
+using NovelParserBLL.FileGenerators.PDF;
 using NovelParserBLL.Models;
 using NovelParserBLL.Parsers;
 using NovelParserBLL.Services;
@@ -185,7 +188,16 @@ namespace NovelParserWPF.ViewModels
             ProgressValueProgressButton = 0;
             await commonNovelParser.LoadChapters(novel, SelectedTranslationTeam, ListChaptersPattern, IncludeImages, cancellationToken);
             if (cancellationToken.IsCancellationRequested) return;
-            await fileGeneratorService.Generate(SavePath, GetSelectedFileFormat(), novel, SelectedTranslationTeam, ListChaptersPattern);
+            var fileFormat = GetSelectedFileFormat();
+
+            GenerationParams generationParams = fileFormat switch
+            {
+                FileFormat.EPUB => new EPUBGenerationParams(fileFormat, SavePath, novel, SelectedTranslationTeam, ListChaptersPattern),
+                FileFormat.PDF => new PDFGenerationParams(fileFormat, SavePath, novel, SelectedTranslationTeam, ListChaptersPattern, PDFType.LongPage),
+                _ => throw new NotImplementedException(),
+            };
+
+            await fileGeneratorService.Generate(generationParams);
         }
 
         private void SetProgressValueProgressButton(int total, int current, string status)

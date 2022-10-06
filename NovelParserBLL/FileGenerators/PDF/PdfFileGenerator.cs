@@ -1,15 +1,18 @@
-﻿using NovelParserBLL.Models;
+﻿using NovelParserBLL.FileGenerators.PDF.HTMLQuestPdfBuilder;
+using NovelParserBLL.Models;
 using QuestPDF.Fluent;
 
 namespace NovelParserBLL.FileGenerators.PDF
 {
-    internal class PdfFileGenerator : IFileGenerator
+    internal class PdfFileGenerator : IFileGenerator<PDFGenerationParams>
     {
-        public Task Generate(string file, Novel novel, string group, string pattern)
+        public Task Generate(PDFGenerationParams generationParams)
         {
             return Task.Run(() =>
             {
-                var chaptersWithCover = new SortedList<int, Chapter>(novel[group, pattern]);
+                var novel = generationParams.Novel;
+
+                var chaptersWithCover = new SortedList<int, Chapter>(generationParams.Chapters);
                 if (novel.Cover != null)
                 {
                     chaptersWithCover.Add(-1, new Chapter()
@@ -31,7 +34,7 @@ namespace NovelParserBLL.FileGenerators.PDF
                     }
                 });
 
-                document.GeneratePdf(file);
+                document.GeneratePdf(generationParams.FilePath);
             });
         }
     }
