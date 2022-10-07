@@ -1,4 +1,5 @@
-﻿using NovelParserBLL.FileGenerators.PDF;
+﻿using ExampleUsingPDFFileGenerator.Properties;
+using NovelParserBLL.FileGenerators.PDF;
 using NovelParserBLL.Models;
 
 var pdfGenerator = new PdfFileGenerator();
@@ -32,7 +33,12 @@ Chapter GetTestChapter()
 {
     var chapter = new Chapter()
     {
-        Content = ""
+        Content = Resources.testHtml,
+        Images = new List<ImageInfo>()
+        {
+            GetTestLongImage(),
+            GetTestShortImage()
+        }
     };
 
     return chapter;

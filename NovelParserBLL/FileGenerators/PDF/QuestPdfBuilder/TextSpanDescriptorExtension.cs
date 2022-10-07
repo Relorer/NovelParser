@@ -1,6 +1,6 @@
 ﻿using QuestPDF.Fluent;
 
-namespace NovelParserBLL.FileGenerators.PDF.HTMLQuestPdfBuilder
+namespace NovelParserBLL.FileGenerators.PDF.QuestPdfBuilder
 {
     internal static class TextSpanDescriptorExtension
     {

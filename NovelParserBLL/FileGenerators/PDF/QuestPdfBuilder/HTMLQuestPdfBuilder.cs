@@ -6,7 +6,7 @@ using QuestPDF.Fluent;
 using QuestPDF.Infrastructure;
 using System.Xml.Linq;
 
-namespace NovelParserBLL.FileGenerators.PDF.HTMLQuestPdfBuilder
+namespace NovelParserBLL.FileGenerators.PDF.QuestPdfBuilder
 {
     internal abstract class HTMLQuestPdfBuilder
     {

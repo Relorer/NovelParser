@@ -1,4 +1,4 @@
-﻿using NovelParserBLL.FileGenerators.PDF.HTMLQuestPdfBuilder;
+﻿using NovelParserBLL.FileGenerators.PDF.QuestPdfBuilder;
 using NovelParserBLL.Models;
 using QuestPDF.Fluent;
 using QuestPDF.Previewer;
@@ -42,7 +42,14 @@ namespace NovelParserBLL.FileGenerators.PDF
             {
                 foreach (var item in chaptersWithCover.Values)
                 {
-                    new BookQuestPdfBuilder(container, item).Build();
+                    HTMLQuestPdfBuilder pdfBuilder = generationParams.PDFType switch
+                    {
+                        PDFType.FixPageSize => new BookQuestPdfBuilder(container, item),
+                        PDFType.LongPage => new ComicsQuestPdfBuilder(container, item),
+                        _ => throw new NotImplementedException(),
+                    };
+
+                    pdfBuilder.Build();
                 }
             });
         }
