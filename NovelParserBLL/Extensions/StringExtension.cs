@@ -8,10 +8,5 @@ namespace NovelParserBLL.Extensions
         {
             return Regex.Replace(str, @"\s+", "");
         }
-
-        public static string Clean(this string value)
-        {
-            return Regex.Replace(value, @"[ \r\n]+", " ").Trim();
-        }
     }
 }

@@ -2,7 +2,7 @@
 using NovelParserBLL.FileGenerators.PDF;
 using NovelParserBLL.Models;
 
-var pdfGenerator = new PdfFileGenerator();
+var pdfGenerator = new PDFFileGenerator();
 
 var testGroupName = "test group";
 
@@ -25,7 +25,7 @@ var novel = new Novel()
     }
 };
 
-var pdfGeneratorParams = new PDFGenerationParams("", novel, testGroupName, "all", PDFType.LongPage);
+var pdfGeneratorParams = new PDFGenerationParams("testFile.pdf", novel, testGroupName, "all", PDFType.FixPageSize);
 
 pdfGenerator.ShowInPreviewer(pdfGeneratorParams);
 
@@ -36,7 +36,7 @@ Chapter GetTestChapter()
         Content = Resources.testHtml,
         Images = new List<ImageInfo>()
         {
-            GetTestLongImage(),
+            //GetTestLongImage(),
             GetTestShortImage()
         }
     };

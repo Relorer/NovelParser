@@ -1,11 +1,12 @@
-﻿using NovelParserBLL.FileGenerators.PDF.QuestPdfBuilder;
+﻿using HTMLQuestPDF;
 using NovelParserBLL.Models;
 using QuestPDF.Fluent;
+using QuestPDF.Helpers;
 using QuestPDF.Previewer;
 
 namespace NovelParserBLL.FileGenerators.PDF
 {
-    public class PdfFileGenerator : IFileGenerator<PDFGenerationParams>
+    public class PDFFileGenerator : IFileGenerator<PDFGenerationParams>
     {
         public Task Generate(PDFGenerationParams generationParams)
         {
@@ -17,7 +18,9 @@ namespace NovelParserBLL.FileGenerators.PDF
 
         public void ShowInPreviewer(PDFGenerationParams generationParams)
         {
-            GetDocumnet(generationParams).ShowInPreviewer();
+            var document = GetDocumnet(generationParams);
+            document.ShowInPreviewer();
+            document.GeneratePdf(generationParams.FilePath);
         }
 
         private Document GetDocumnet(PDFGenerationParams generationParams)
@@ -30,7 +33,7 @@ namespace NovelParserBLL.FileGenerators.PDF
                 chaptersWithCover.Add(-1, new Chapter()
                 {
                     Name = "Cover",
-                    Content = $"<img src=\"{novel.Cover.Name}\"/>",
+                    Content = $"<div><a><img src=\"{novel.Cover.Name}\"/></a></div>",
                     Images = new List<ImageInfo>()
                     {
                         novel.Cover
@@ -38,18 +41,17 @@ namespace NovelParserBLL.FileGenerators.PDF
                 });
             }
 
+            QuestPDF.Settings.CheckIfAllTextGlyphsAreAvailable = false;
             return Document.Create(container =>
             {
                 foreach (var item in chaptersWithCover.Values)
                 {
-                    HTMLQuestPdfBuilder pdfBuilder = generationParams.PDFType switch
+                    var getImagePath = (string src) =>
                     {
-                        PDFType.FixPageSize => new BookQuestPdfBuilder(container, item),
-                        PDFType.LongPage => new ComicsQuestPdfBuilder(container, item),
-                        _ => throw new NotImplementedException(),
+                        return item.Images.Find(i => i.Name.Equals(src))?.FullPath;
                     };
 
-                    pdfBuilder.Build();
+                    container.HTMLPage(item.Content ?? "", getImagePath, PageSizes.A4, 1, 0.5f, QuestPDF.Infrastructure.Unit.Centimetre);
                 }
             });
         }

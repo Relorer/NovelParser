@@ -6,7 +6,7 @@ namespace NovelParserBLL.Services
 {
     public class FileGeneratorService
     {
-        private PdfFileGenerator pdfGenerator = new PdfFileGenerator();
+        private PDFFileGenerator pdfGenerator = new PDFFileGenerator();
         private EpubFileGenerator epubFileGenerator = new EpubFileGenerator();
 
         public Task Generate(GenerationParams generationParams)

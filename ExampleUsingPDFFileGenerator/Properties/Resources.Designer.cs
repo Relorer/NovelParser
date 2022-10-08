@@ -65,14 +65,13 @@ namespace ExampleUsingPDFFileGenerator.Properties {
         ///    &lt;div class=&quot;article-image&quot;&gt;
         ///        &lt;img class=&quot;lazyload&quot;
         ///             data-background=&quot;&quot;
-        ///             data-src=&quot;shortTestImage.png&quot; /&gt;
+        ///             src=&quot;shortTestImage.png&quot; /&gt;
         ///    &lt;/div&gt;
-        ///    &lt;p&gt;Пролог&lt;/p&gt;
+        ///    &lt;p&gt;Lorem&lt;/p&gt;
         ///    &lt;p&gt;
-        ///        Континент Дикатен делят три королевства: на севере лесное королевство —
-        ///        Эленор, возле южной границы подземное королевство — Дарв и королевство —
-        ///        Сапин на восточной границе континента. Помимо королевств существуют Звериные
-        ///        Поляны, полн [rest of string was truncated]&quot;;.
+        ///        &lt;s&gt;Lorem ipsum&lt;/s&gt; dolor sit, &lt;b&gt;amet&lt;/b&gt; consectetur &lt;strike&gt;adipisicing&lt;/strike&gt; elit. Illo aperiam perferendis
+        ///        soluta nam &lt;small&gt;ducimus&lt;/small&gt; ipsa alias animi asperiores quisquam aut ex minus,
+        ///        cum &lt;u&gt;possimus&lt;/u&gt; accusamus corporis? &lt;a href=&quot;h [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string testHtml {
             get {
