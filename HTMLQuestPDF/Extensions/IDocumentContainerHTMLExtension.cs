@@ -1,8 +1,9 @@
-﻿using QuestPDF.Fluent;
+﻿using HTMLQuestPDF.Components;
+using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 
-namespace HTMLQuestPDF
+namespace HTMLQuestPDF.Extensions
 {
     public static class IDocumentContainerHTMLExtension
     {
@@ -11,13 +12,8 @@ namespace HTMLQuestPDF
             container.Page(page =>
             {
                 page.Size(pageSize);
-                page.MarginLeft(marginLeft, unit);
-                page.MarginTop(marginTop, unit);
-                page.MarginRight(marginRight, unit);
-                page.MarginBottom(marginBottom, unit);
-
                 var pageSizeWithoutMargins = new PageSize(pageSize.Width - ToPoints(marginLeft, unit) - ToPoints(marginRight, unit), pageSize.Height - ToPoints(marginTop, unit) - ToPoints(marginBottom, unit));
-                new HTMLQuestPDFBuilder(page.Content(), html, getImagePath, pageSizeWithoutMargins).Build();
+                page.Compose(pageSizeWithoutMargins, html, getImagePath, marginLeft, marginTop, marginRight, marginBottom, unit);
             });
         }
 
@@ -26,13 +22,8 @@ namespace HTMLQuestPDF
             container.Page(page =>
             {
                 page.ContinuousSize(width);
-                page.MarginLeft(marginLeft, unit);
-                page.MarginTop(marginTop, unit);
-                page.MarginRight(marginRight, unit);
-                page.MarginBottom(marginBottom, unit);
-
                 var pageSizeWithoutMargins = new PageSize(ToPoints(width, unit) - ToPoints(marginLeft, unit) - ToPoints(marginRight, unit), 14400 - ToPoints(marginTop, unit) - ToPoints(marginBottom, unit));
-                new HTMLQuestPDFBuilder(page.Content(), html, getImagePath, pageSizeWithoutMargins).Build();
+                page.Compose(pageSizeWithoutMargins, html, getImagePath, marginLeft, marginTop, marginRight, marginBottom, unit);
             });
         }
 
@@ -54,6 +45,15 @@ namespace HTMLQuestPDF
         public static void HTMLPage(this IDocumentContainer container, string html, Func<string, string> getImagePath, float width, float margin, Unit unit = Unit.Point)
         {
             container.HTMLPage(html, getImagePath, width, margin, margin, margin, margin, unit);
+        }
+
+        private static void Compose(this PageDescriptor page, PageSize containerSize, string html, Func<string, string> getImagePath, float marginLeft, float marginTop, float marginRight, float marginBottom, Unit unit = Unit.Point)
+        {
+            page.MarginLeft(marginLeft, unit);
+            page.MarginTop(marginTop, unit);
+            page.MarginRight(marginRight, unit);
+            page.MarginBottom(marginBottom, unit);
+            page.Content().Component(new PDFComponent(html, getImagePath, containerSize));
         }
 
         private static float ToPoints(float value, Unit unit)
