@@ -1,4 +1,6 @@
 ﻿using HtmlAgilityPack;
+using HTMLQuestPDF.Extensions;
+using HTMLQuestPDF.Models;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -11,13 +13,13 @@ namespace HTMLQuestPDF.Components.Tags
         private readonly Func<string, string> getImagePath;
         private readonly PageSize containerSize;
 
-        public ImgComponent(Func<string, string> getImagePath, PageSize containerSize, HtmlNode node) : base(node)
+        public ImgComponent(HtmlNode node, HTMLComponentsArgs args) : base(node, args)
         {
-            this.getImagePath = getImagePath;
-            this.containerSize = containerSize;
+            this.getImagePath = args.GetImagePath;
+            this.containerSize = args.ContainerSize;
         }
 
-        public void Compose(IContainer container)
+        protected override void ComposeSingle(IContainer container)
         {
             var src = node.GetAttributeValue("src", "");
             var fullPath = getImagePath(src);
@@ -27,14 +29,10 @@ namespace HTMLQuestPDF.Components.Tags
             if (File.Exists(fullPath))
             {
                 item.Element(e =>
-                {
-                    using Image image = Image.Load(fullPath);
-                    var requiredHeight = image.Height * (containerSize.Width / image.Width);
-                    return requiredHeight > containerSize.Height ? e.MinHeight(containerSize.Height) : e;
-                })
-                    .Element(e =>
                     {
-                        return true ? e : e.Hyperlink("");
+                        using Image image = Image.Load(fullPath);
+                        var requiredHeight = image.Height * (containerSize.Width / image.Width);
+                        return requiredHeight > containerSize.Height ? e.MinHeight(containerSize.Height) : e;
                     })
                     .Image(fullPath, ImageScaling.FitArea);
             }
@@ -43,5 +41,6 @@ namespace HTMLQuestPDF.Components.Tags
                 item.Image(Placeholders.Image(200, 100), ImageScaling.FitArea);
             }
         }
+
     }
 }

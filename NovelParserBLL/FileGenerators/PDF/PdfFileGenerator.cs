@@ -1,4 +1,5 @@
 ﻿using HTMLQuestPDF;
+using HTMLQuestPDF.Extensions;
 using NovelParserBLL.Models;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;

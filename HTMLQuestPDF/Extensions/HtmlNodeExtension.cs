@@ -34,19 +34,20 @@ namespace HTMLQuestPDF.Extensions
             return blocks.Where(s => s.HasContent()).ToList();
         }
 
-        public static IComponent GetComponent(this HtmlNode node)
+        public static IComponent GetComponent(this HtmlNode node, HTMLComponentsArgs args)
         {
             return node.Name.ToLower() switch
             {
                 "#text" or "h1" or "h2" or "h3" or "h4" or "h5" or "h6" or "b" or "s" or "strike" or "i" or "small" or "u"
                     => new ParagraphComponent(new List<HtmlNode>() { node }),
-                "br" => new BrComponent(node),
-                "a" => new AComponent(node),
-                "div" => new BaseHTMLComponent(node),
-                "p" => new PComponent(node),
-                "table" => new TableComponent(node),
-                "ul" or "ol" => new ListComponent(node),
-                _ => new BaseHTMLComponent(node),
+                "br" => new BrComponent(node, args),
+                "a" => new AComponent(node, args),
+                "div" => new BaseHTMLComponent(node, args),
+                "p" => new PComponent(node, args),
+                "table" => new TableComponent(node, args),
+                "ul" or "ol" => new ListComponent(node, args),
+                "img" => new ImgComponent(node, args),
+                _ => new BaseHTMLComponent(node, args),
             };
         }
 
@@ -138,7 +139,7 @@ namespace HTMLQuestPDF.Extensions
         {
             foreach (var item in node.ChildNodes)
             {
-                if (!item.IsEmpty()) return true;
+                if (HasContent(item)) return true;
             }
             return !node.IsEmpty();
         }

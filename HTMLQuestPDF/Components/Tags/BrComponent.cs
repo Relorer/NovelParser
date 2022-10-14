@@ -1,4 +1,5 @@
 ﻿using HtmlAgilityPack;
+using HTMLQuestPDF.Models;
 using QuestPDF.Fluent;
 using QuestPDF.Infrastructure;
 
@@ -6,7 +7,7 @@ namespace HTMLQuestPDF.Components.Tags
 {
     internal class BrComponent : BaseHTMLComponent
     {
-        public BrComponent(HtmlNode node) : base(node)
+        public BrComponent(HtmlNode node, HTMLComponentsArgs args) : base(node, args)
         {
         }
 

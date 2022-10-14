@@ -53,7 +53,7 @@ namespace HTMLQuestPDF.Extensions
             page.MarginTop(marginTop, unit);
             page.MarginRight(marginRight, unit);
             page.MarginBottom(marginBottom, unit);
-            page.Content().Component(new PDFComponent(html, getImagePath, containerSize));
+            page.Content().Component(new PDFComponent(html, new Models.HTMLComponentsArgs(containerSize, getImagePath)));
         }
 
         private static float ToPoints(float value, Unit unit)

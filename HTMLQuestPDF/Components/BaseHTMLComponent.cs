@@ -1,5 +1,6 @@
 ﻿using HtmlAgilityPack;
 using HTMLQuestPDF.Extensions;
+using HTMLQuestPDF.Models;
 using QuestPDF.Fluent;
 using QuestPDF.Infrastructure;
 
@@ -7,11 +8,13 @@ namespace HTMLQuestPDF.Components
 {
     internal class BaseHTMLComponent : IComponent
     {
+        protected readonly HTMLComponentsArgs args;
         protected readonly HtmlNode node;
 
-        public BaseHTMLComponent(HtmlNode node)
+        public BaseHTMLComponent(HtmlNode node, HTMLComponentsArgs args)
         {
             this.node = node;
+            this.args = args;
         }
 
         public void Compose(IContainer container)
@@ -51,7 +54,7 @@ namespace HTMLQuestPDF.Components
                         ComposeMany(col, buffer);
                         buffer.Clear();
 
-                        col.Item().Component(item.GetComponent());
+                        col.Item().Component(item.GetComponent(args));
                     }
                     else
                     {
@@ -66,7 +69,7 @@ namespace HTMLQuestPDF.Components
         {
             if (nodes.Count == 1)
             {
-                col.Item().Component(nodes.First().GetComponent());
+                col.Item().Component(nodes.First().GetComponent(args));
             }
             else if (nodes.Count > 0)
             {

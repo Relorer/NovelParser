@@ -1,5 +1,6 @@
 ﻿using HtmlAgilityPack;
 using HTMLQuestPDF.Extensions;
+using HTMLQuestPDF.Models;
 using QuestPDF.Fluent;
 using QuestPDF.Infrastructure;
 
@@ -7,7 +8,7 @@ namespace HTMLQuestPDF.Components.Tags
 {
     internal class ListComponent : BaseHTMLComponent
     {
-        public ListComponent(HtmlNode node) : base(node)
+        public ListComponent(HtmlNode node, HTMLComponentsArgs args) : base(node, args)
         {
         }
 

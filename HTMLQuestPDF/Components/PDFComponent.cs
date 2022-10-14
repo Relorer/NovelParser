@@ -1,5 +1,7 @@
 ﻿using HtmlAgilityPack;
+using HTMLQuestPDF.Components.Tags;
 using HTMLQuestPDF.Extensions;
+using HTMLQuestPDF.Models;
 using HTMLQuestPDF.Utils;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
@@ -13,17 +15,14 @@ namespace HTMLQuestPDF.Components
 
     internal class PDFComponent : IComponent
     {
-        private readonly PageSize containerSize;
-
-        private readonly Func<string, string> getImagePath;
+        private readonly HTMLComponentsArgs args;
 
         private readonly string html;
 
-        public PDFComponent(string html, Func<string, string> getImagePath, PageSize containerSize)
+        public PDFComponent(string html, HTMLComponentsArgs args)
         {
             this.html = html;
-            this.getImagePath = getImagePath;
-            this.containerSize = containerSize;
+            this.args = args;
         }
 
         public void Compose(IContainer container)
@@ -34,7 +33,7 @@ namespace HTMLQuestPDF.Components
 
             CreateSeparateBranchesForTextNodes(node);
 
-            container.Component(node.GetComponent());
+            container.Component(node.GetComponent(args));
         }
 
         /// <summary>
@@ -51,7 +50,7 @@ namespace HTMLQuestPDF.Components
         {
             if (node.IsLineNode() && node.HasBlockElement())
             {
-                var slices = node.GetSlices(new Models.Slice() { Nodes = new List<HtmlNode>() { node } });
+                var slices = node.GetSlices(new Slice() { Nodes = new List<HtmlNode>() { node } });
 
                 var nodes = new HtmlNodeCollection(node);
 
