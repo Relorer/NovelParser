@@ -8,7 +8,7 @@ namespace NovelParserBLL.Models
     public class Novel
     {
         public string? Author { get; set; }
-        public Dictionary<string, SortedList<int, Chapter>>? ChaptersByGroup { get; set; }
+        public Dictionary<string, SortedList<float, Chapter>>? ChaptersByGroup { get; set; }
         public ImageInfo? Cover { get; set; }
         public string? Description { get; set; }
         public string? Name { get; set; }
@@ -17,35 +17,20 @@ namespace NovelParserBLL.Models
         [JsonIgnore]
         public string DownloadFolderName => Path.Combine(Resources.CacheFolder, FileHelper.RemoveInvalidFilePathCharacters(URL ?? ""));
 
-        public SortedList<int, Chapter> this[string? group, string? pattern]
+        public SortedList<float, Chapter> this[string? group, string? pattern]
         {
             get
             {
                 if (string.IsNullOrEmpty(group) || string.IsNullOrEmpty(pattern) ||
-                    (!ChaptersByGroup?.ContainsKey(group) ?? false)) return new SortedList<int, Chapter>();
+                    (!ChaptersByGroup?.ContainsKey(group) ?? false)) return new SortedList<float, Chapter>();
 
-                var chapters = this.ChaptersByGroup![group];
+                var chapters = ChaptersByGroup![group];
 
-                var result = new SortedList<int, Chapter>(chapters?.Count ?? 0);
+                var result = new SortedList<float, Chapter>(chapters?.Count ?? 0);
 
                 if (chapters == null) return result;
 
                 var parts = pattern.RemoveWhiteSpaces().ToLower().Split(',');
-
-                var addRange = (int start, int end) =>
-                {
-                    if (end < start) (start, end) = (end, start);
-                    start = Math.Max(1, start);
-                    end = Math.Min(chapters.Last().Key, end);
-
-                    for (int i = start; i <= end; i++)
-                    {
-                        if (!result.ContainsKey(i) && chapters.TryGetValue(i, out Chapter? ch))
-                        {
-                            result.Add(i, ch);
-                        }
-                    }
-                };
 
                 foreach (var part in parts)
                 {
@@ -57,15 +42,25 @@ namespace NovelParserBLL.Models
                     {
                         var nums = part.Split('-');
 
-                        bool containsNum1 = int.TryParse(nums[0], out int num1);
-                        bool containsNum2 = int.TryParse(nums[1], out int num2);
+                        var containsNum1 = float.TryParse(nums[0], out var num1);
+                        var containsNum2 = float.TryParse(nums[1], out var num2);
 
-                        addRange(containsNum1 ? num1 : 1, containsNum2 ? num2 : chapters.Last().Key);
+                        var start = containsNum1 ? num1 : 1;
+                        var end = containsNum2 ? num2 : chapters.Last().Key;
+                        if (end < start) (start, end) = (end, start);
+                        start = Math.Max(1, start);
+                        end = Math.Min(chapters.Last().Key, end);
+
+                        var list = chapters.Where(ch => ch.Key >= start && ch.Key <= end);
+                        foreach (var item in list)
+                        {
+                            result.Add(item.Key, item.Value);
+                        }
                     }
-                    else if (int.TryParse(part, out int num))
+                    else if (float.TryParse(part, out var num))
                     {
                         var index = Math.Min(chapters.Last().Key, num);
-                        if (chapters.TryGetValue(index, out Chapter? ch))
+                        if (chapters.TryGetValue(index, out var ch))
                         {
                             result.Add(index, ch);
                         }
@@ -78,35 +73,33 @@ namespace NovelParserBLL.Models
 
         public void Merge(Novel secondNovelInfo)
         {
-            this.URL = this.URL ?? secondNovelInfo.URL;
-            this.Name = this.Name ?? secondNovelInfo.Name;
-            this.Author = this.Author ?? secondNovelInfo.Author;
-            this.Description = this.Description ?? secondNovelInfo.Description;
-            this.Cover = this.Cover ?? secondNovelInfo.Cover;
+            URL ??= secondNovelInfo.URL;
+            Name ??= secondNovelInfo.Name;
+            Author ??= secondNovelInfo.Author;
+            Description ??= secondNovelInfo.Description;
+            Cover ??= secondNovelInfo.Cover;
 
-            if (this.ChaptersByGroup != null && secondNovelInfo.ChaptersByGroup != null)
+            if (ChaptersByGroup != null && secondNovelInfo.ChaptersByGroup != null)
             {
                 foreach (var team in secondNovelInfo.ChaptersByGroup)
                 {
-                    if (this.ChaptersByGroup.TryGetValue(team.Key, out SortedList<int, Chapter>? chapters))
+                    if (ChaptersByGroup.TryGetValue(team.Key, out var chapters))
                     {
                         foreach (var item in team.Value)
                         {
-                            if (!chapters.TryGetValue(item.Key, out Chapter? chapter))
-                            {
+                            if (!chapters.ContainsKey(item.Key))
                                 chapters.Add(item.Key, item.Value);
-                            }
                         }
                     }
                     else
                     {
-                        this.ChaptersByGroup.Add(team.Key, team.Value);
+                        ChaptersByGroup.Add(team.Key, team.Value);
                     }
                 }
             }
             else
             {
-                this.ChaptersByGroup = this.ChaptersByGroup ?? secondNovelInfo.ChaptersByGroup;
+                ChaptersByGroup ??= secondNovelInfo.ChaptersByGroup;
             }
         }
     }

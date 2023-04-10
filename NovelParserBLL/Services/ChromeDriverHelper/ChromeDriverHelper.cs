@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿/*
+using Newtonsoft.Json;
 using NovelParserBLL.Properties;
 using NovelParserBLL.Utilities;
 using OpenQA.Selenium.Chrome;
@@ -118,4 +119,4 @@ namespace NovelParserBLL.Services.ChromeDriverHelper
             return driver;
         }
     }
-}
+}*/

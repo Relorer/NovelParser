@@ -6,22 +6,17 @@ namespace NovelParserBLL.Services
 {
     public class FileGeneratorService
     {
-        private PDFFileGenerator pdfGenerator = new PDFFileGenerator();
-        private EpubFileGenerator epubFileGenerator = new EpubFileGenerator();
+        private PDFFileGenerator pdfGenerator = new();
+        private EpubFileGenerator epubFileGenerator = new();
 
         public Task Generate(GenerationParams generationParams)
         {
-            switch (generationParams)
+            return generationParams switch
             {
-                case PDFGenerationParams:
-                    return pdfGenerator.Generate((PDFGenerationParams)generationParams);
-
-                case EPUBGenerationParams:
-                    return epubFileGenerator.Generate((EPUBGenerationParams)generationParams);
-
-                default:
-                    throw new ArgumentException(nameof(generationParams));
-            }
+                PDFGenerationParams @params => pdfGenerator.Generate(@params),
+                EPUBGenerationParams @params => epubFileGenerator.Generate(@params),
+                _ => throw new ArgumentException(nameof(generationParams))
+            };
         }
     }
 }

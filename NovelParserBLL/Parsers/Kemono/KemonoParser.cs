@@ -13,40 +13,41 @@ namespace NovelParserBLL.Parsers.kemono
 {
     internal class KemonoParser : INovelParser
     {
-        private readonly HttpClient httpClient = new HttpClient();
-        private readonly HtmlParser parser = new HtmlParser();
+        private readonly HttpClient httpClient;
+        private readonly HtmlParser parser = new();
         private readonly SetProgress setProgress;
         private readonly string urlPattern = @"https:\/\/kemono\.party\/[a-zA-Z]+\/user\/\d*";
         private IBrowsingContext context = BrowsingContext.New(Configuration.Default.WithDefaultLoader());
 
-        private DefaultHttpRequester requester = new DefaultHttpRequester();
+        private readonly DefaultHttpRequester requester = new ();
 
-        public KemonoParser(SetProgress setProgress)
+        public KemonoParser(SetProgress setProgress, HttpClient client)
         {
             this.setProgress = setProgress;
+            httpClient = client;
         }
 
-        public ParserInfo ParserInfo => new ParserInfo("https://kemono.party/", "Kemono", "");
+        public ParserInfo ParserInfo => new ("https://kemono.party/", "Kemono", "");
 
-        public Task LoadChapters(Novel novel, string group, string pattern, bool includeImages, CancellationToken cancellationToken)
+        public Task LoadChapters(Novel novel, string group, string pattern, bool includeImages, CancellationToken token)
         {
             return Task.Run(async () =>
             {
-                int i = 1;
+                var i = 1;
                 var nonLoadedChapters = novel[group, pattern].ForLoad(includeImages);
 
                 setProgress(nonLoadedChapters.Count, 0, Resources.ProgressStatusParsing);
                 foreach (var chapter in nonLoadedChapters)
                 {
-                    var doc = await context.OpenAsync(chapter.Url!);
+                    var doc = await context.OpenAsync(chapter.Url!, token);
 
                     var attempt = 1;
                     while (doc.StatusCode != System.Net.HttpStatusCode.OK && attempt < 4)
                     {
-                        doc = await context.OpenAsync(chapter.Url!);
-                        if (cancellationToken.IsCancellationRequested) return;
+                        doc = await context.OpenAsync(chapter.Url!, token);
+                        if (token.IsCancellationRequested) return;
                         RefreshContext();
-                        await Task.Delay(1000 * attempt++);
+                        await Task.Delay(1000 * attempt++, token);
                     }
 
                     chapter.Content = doc.QuerySelector(".post__body")?.InnerHtml ?? "";
@@ -56,9 +57,9 @@ namespace NovelParserBLL.Parsers.kemono
                     UpdateLinks(chapter);
                     setProgress(nonLoadedChapters.Count, i++, Resources.ProgressStatusParsing);
 
-                    if (cancellationToken.IsCancellationRequested) return;
+                    if (token.IsCancellationRequested) return;
                 }
-            });
+            }, token);
         }
 
         public async Task<Novel> ParseCommonInfo(Novel novel, CancellationToken cancellationToken)
@@ -72,8 +73,8 @@ namespace NovelParserBLL.Parsers.kemono
 
             if (chapterCount != novel.ChaptersByGroup?.FirstOrDefault().Value.Count)
             {
-                novel.ChaptersByGroup = new Dictionary<string, SortedList<int, Chapter>>() {
-                    { "none", await GetChapters(novel!.URL, chapterCount, cancellationToken) }
+                novel.ChaptersByGroup = new Dictionary<string, SortedList<float, Chapter>> {
+                    { "none", await GetChapters(novel.URL, chapterCount, cancellationToken) }
                 };
             }
 
@@ -105,20 +106,20 @@ namespace NovelParserBLL.Parsers.kemono
             return !string.IsNullOrEmpty(PrepareUrl(url));
         }
 
-        private async Task<SortedList<int, Chapter>> GetChapters(string url, int count, CancellationToken cancellationToken)
+        private async Task<SortedList<float, Chapter>> GetChapters(string url, int count, CancellationToken cancellationToken)
         {
-            var chapters = new SortedList<int, Chapter>();
+            var chapters = new SortedList<float, Chapter>();
 
             int j = count;
 
             for (int i = 0; i < count; i += 25)
             {
-                var page = await context.OpenAsync(url + $"?o={i}");
+                var page = await context.OpenAsync(url + $"?o={i}", cancellationToken);
                 foreach (var item in page.QuerySelectorAll(".post-card__heading > a"))
                 {
-                    var chapterUrl = ParserInfo.SiteDomen + item.GetAttribute("href");
+                    var chapterUrl = ParserInfo.SiteDomain + item.GetAttribute("href");
                     var title = item.TextContent;
-                    chapters.Add(j, new Chapter() { Name = title, Url = chapterUrl, Content = "", Number = j.ToString() });
+                    chapters.Add(j, new Chapter { Name = title, Url = chapterUrl, Content = "", Number = j.ToString() });
                     j--;
                 }
 
@@ -132,10 +133,10 @@ namespace NovelParserBLL.Parsers.kemono
         private int GetCountChapters(IDocument doc)
         {
             var paginator = doc.QuerySelector(".paginator > small")?.TextContent ?? "of 0";
-            return int.Parse(paginator.Substring(paginator.IndexOf("of") + 2).Trim());
+            return int.Parse(paginator[(paginator.IndexOf("of", StringComparison.Ordinal) + 2)..].Trim());
         }
 
-        private string GetCoverUrl(IDocument doc) => ParserInfo.SiteDomen + doc.QuerySelector(".image-link .fancy-image__image")?.GetAttribute("src");
+        private string GetCoverUrl(IDocument doc) => ParserInfo.SiteDomain + doc.QuerySelector(".image-link .fancy-image__image")?.GetAttribute("src");
 
         private async Task<ImageInfo> GetImg(string url, string folder)
         {
@@ -150,7 +151,7 @@ namespace NovelParserBLL.Parsers.kemono
                     var bytes = await httpClient.GetByteArrayAsync(url);
 
                     Directory.CreateDirectory(Path.GetDirectoryName(result.FullPath)!);
-                    using var stream = File.Create(result.FullPath);
+                    await using var stream = File.Create(result.FullPath);
                     stream.Write(bytes);
                     break;
                 }
@@ -164,7 +165,8 @@ namespace NovelParserBLL.Parsers.kemono
             return result;
         }
 
-        private string GetName(IDocument doc) => doc.QuerySelector(".user-header__profile")?.TextContent.Trim() ?? "";
+        private static string GetName(IParentNode doc) => 
+            doc.QuerySelector(".user-header__profile")?.TextContent.Trim() ?? "";
 
         private async Task UpdateImages(Chapter chapter, string folder)
         {
@@ -174,14 +176,13 @@ namespace NovelParserBLL.Parsers.kemono
 
                 foreach (var img in doc.QuerySelectorAll("img"))
                 {
-                    string? url = img.GetAttribute("src");
+                    var url = img.GetAttribute("src");
 
-                    if (!string.IsNullOrEmpty(url))
-                    {
-                        var image = await GetImg(ParserInfo.SiteDomen + img.GetAttribute("src"), folder);
-                        chapter.Images.Add(image);
-                        img.SetAttribute("src", image.Name);
-                    }
+                    if (string.IsNullOrEmpty(url)) continue;
+
+                    var image = await GetImg(ParserInfo.SiteDomain + img.GetAttribute("src"), folder);
+                    chapter.Images.Add(image);
+                    img.SetAttribute("src", image.Name);
                 }
 
                 chapter.Content = doc.Body?.InnerHtml ?? "";
@@ -192,26 +193,24 @@ namespace NovelParserBLL.Parsers.kemono
 
         private void UpdateLinks(Chapter chapter)
         {
-            if (chapter.Content != null && chapter.Content.Contains("fileThumb"))
+            if (chapter.Content == null || !chapter.Content.Contains("fileThumb")) 
+                return;
+
+            var doc = parser.ParseDocument(chapter.Content);
+
+            foreach (var a in doc.QuerySelectorAll(".fileThumb"))
             {
-                var doc = parser.ParseDocument(chapter.Content);
+                var href = a.GetAttribute("href");
+                if (string.IsNullOrEmpty(href)) continue;
 
-                foreach (var a in doc.QuerySelectorAll(".fileThumb"))
+                if (href.StartsWith("/data"))
                 {
-                    string? href = a.GetAttribute("href");
-
-                    if (!string.IsNullOrEmpty(href))
-                    {
-                        if (href.StartsWith("/data"))
-                        {
-                            href = ParserInfo.SiteDomen + href;
-                        }
-                        a.SetAttribute("href", href);
-                    }
+                    href = ParserInfo.SiteDomain + href;
                 }
-
-                chapter.Content = doc.Body?.InnerHtml ?? "";
+                a.SetAttribute("href", href);
             }
+
+            chapter.Content = doc.Body?.InnerHtml ?? "";
         }
     }
 }

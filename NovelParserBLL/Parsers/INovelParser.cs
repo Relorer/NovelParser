@@ -6,7 +6,7 @@ namespace NovelParserBLL.Parsers
     {
         public ParserInfo ParserInfo { get; }
 
-        Task LoadChapters(Novel novel, string group, string pattern, bool includeImages, CancellationToken cancellationToken);
+        Task LoadChapters(Novel novel, string group, string pattern, bool includeImages, CancellationToken token);
 
         Task<Novel> ParseCommonInfo(Novel novel, CancellationToken cancellationToken);
 

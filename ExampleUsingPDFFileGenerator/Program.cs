@@ -6,18 +6,18 @@ var pdfGenerator = new PDFFileGenerator();
 
 var testGroupName = "test group";
 
-var novel = new Novel()
+var novel = new Novel
 {
     Name = "Test novel name",
     Description = "Test novel description",
     Author = "no author",
     URL = "none",
     Cover = GetTestCover(),
-    ChaptersByGroup = new Dictionary<string, SortedList<int, Chapter>>()
+    ChaptersByGroup = new Dictionary<string, SortedList<float, Chapter>>()
     {
         {
             testGroupName,
-            new SortedList<int, Chapter>()
+            new SortedList<float, Chapter>()
             {
                 {1, GetTestChapter() },
             }

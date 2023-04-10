@@ -1,7 +1,7 @@
 ﻿using NovelParserBLL.Models;
 using NovelParserBLL.Parsers;
 using NovelParserBLL.Parsers.kemono;
-using NovelParserBLL.Parsers.libme;
+using NovelParserBLL.Parsers.Libme;
 
 namespace NovelParserBLL.Services
 {
@@ -9,20 +9,38 @@ namespace NovelParserBLL.Services
 
     public class CommonNovelParser
     {
+        private const string DefaultAgent =
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:101.0) Gecko/20100101 Firefox/101.0";
+        private static readonly HttpClientHandler httpClientHandler;
+        private static readonly HttpClient httpClient;
+
         private readonly NovelCacheService novelCacheService;
         private readonly SetProgress setProgress;
-        private readonly List<INovelParser> novelParsers = new List<INovelParser>();
+        private readonly List<INovelParser> novelParsers = new ();
 
+       
+        //ToDo Переделать парсеры
+        
+        static CommonNovelParser()
+        {
+            httpClientHandler = new HttpClientHandler();
+
+            //Disable SSL verification
+            httpClientHandler.ServerCertificateCustomValidationCallback =
+                HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+            httpClient = new HttpClient(httpClientHandler, true);
+            httpClient.DefaultRequestHeaders.Add("User-Agent", DefaultAgent);
+        }
         public CommonNovelParser(NovelCacheService novelCacheService, SetProgress? setProgress = null)
         {
             this.novelCacheService = novelCacheService;
 
             this.setProgress = setProgress ?? ((int _, int _, string _) => { });
 
-            novelParsers.Add(new RanobeLibMeParser(this.setProgress));
-            novelParsers.Add(new MangaLibMeParser(this.setProgress));
-            novelParsers.Add(new HentaiLibMeParser(this.setProgress));
-            novelParsers.Add(new YaoiLibMeParser(this.setProgress));
+            novelParsers.Add(new RanobeLibMeParser(this.setProgress, httpClient));
+            //novelParsers.Add(new MangaLibMeParser(this.setProgress));
+            //novelParsers.Add(new HentaiLibMeParser(this.setProgress));
+            //novelParsers.Add(new YaoiLibMeParser(this.setProgress));
             novelParsers.Add(new KemonoParser(this.setProgress));
         }
 

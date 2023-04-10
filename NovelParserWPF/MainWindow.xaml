@@ -194,7 +194,7 @@
                                         Margin="5"
                                         HorizontalAlignment="Stretch"
                                         Command="{Binding ElementName=WindowMain, Path=DataContext.OpenSiteOfParserCommand}"
-                                        CommandParameter="{Binding Path=SiteDomen}"
+                                        CommandParameter="{Binding Path=SiteDomain}"
                                         Content="{Binding Path=SiteName}" />
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>

@@ -6,10 +6,8 @@ using NovelParserBLL.FileGenerators.PDF;
 using NovelParserBLL.Models;
 using NovelParserBLL.Parsers;
 using NovelParserBLL.Services;
-using NovelParserBLL.Services.ChromeDriverHelper;
 using NovelParserWPF.DialogWindows;
 using NovelParserWPF.Utilities;
-using OpenQA.Selenium.Chrome;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -58,9 +56,9 @@ namespace NovelParserWPF.ViewModels
 
         public int TotalChapters => chaptersCurrentTeam?.Count ?? 0;
 
-        private SortedList<int, Chapter>? chaptersCurrentTeam => Novel?[SelectedTranslationTeam, "all"];
+        private SortedList<float, Chapter>? chaptersCurrentTeam => Novel?[SelectedTranslationTeam, "all"];
 
-        public SortedList<int, Chapter>? ChaptersToDownload => Novel?[SelectedTranslationTeam, ListChaptersPattern];
+        public SortedList<float, Chapter>? ChaptersToDownload => Novel?[SelectedTranslationTeam, ListChaptersPattern];
 
         public BitmapImage? Cover => Novel?.Cover?.TryGetByteArray(out byte[]? cover) ?? false ? ImageHelper.BitmapImageFromBuffer(cover!) : null;
 
@@ -138,7 +136,7 @@ namespace NovelParserWPF.ViewModels
                     isLoadingProgressButton = true;
                     cancellationTokenSource = new CancellationTokenSource();
                     loadingTask = StartButtonClick(cancellationTokenSource.Token);
-                    loadingTask.ContinueWith((_) =>
+                    loadingTask.ContinueWith( _ =>
                     {
                         IsLoadingProgressButton = false;
                     });
@@ -152,7 +150,7 @@ namespace NovelParserWPF.ViewModels
 
             try
             {
-                TryCloseAuthDriver();
+                //TryCloseAuthDriver();
 
                 if (Novel == null)
                 {
@@ -237,13 +235,13 @@ namespace NovelParserWPF.ViewModels
             }
         }
 
-        private ChromeDriver? authDriver;
+        //private ChromeDriver? authDriver;
 
         [GenerateCommand]
         private void OpenAuthClick(string url)
         {
-            TryCloseAuthDriver();
-            authDriver = ChromeDriverHelper.OpenPageWithAutoClose(url);
+            //TryCloseAuthDriver();
+            //authDriver = ChromeDriverHelper.OpenPageWithAutoClose(url);
         }
 
         private bool CanOpenAuthClick(string url) => UseCookies;
@@ -251,17 +249,17 @@ namespace NovelParserWPF.ViewModels
         [GenerateCommand]
         private void ClearCookiesClick()
         {
-            TryCloseAuthDriver();
-            ChromeDriverHelper.ClearCookies();
+            //TryCloseAuthDriver();
+            //ChromeDriverHelper.ClearCookies();
         }
 
         private bool CanClearCookiesClick() => UseCookies;
 
-        private void TryCloseAuthDriver()
-        {
-            authDriver?.Dispose();
-            authDriver = null;
-        }
+        //private void TryCloseAuthDriver()
+        //{
+        //    authDriver?.Dispose();
+        //    authDriver = null;
+        //}
 
         #endregion CookiesSettings
 
@@ -276,7 +274,7 @@ namespace NovelParserWPF.ViewModels
         [GenerateCommand]
         private void CloseSettingsHandler()
         {
-            TryCloseAuthDriver();
+            //TryCloseAuthDriver();
         }
 
         #endregion CloseSettings
@@ -286,7 +284,7 @@ namespace NovelParserWPF.ViewModels
         [GenerateCommand]
         private void CloseWindowHandler()
         {
-            TryCloseAuthDriver();
+            //TryCloseAuthDriver();
             cancellationTokenSource?.Dispose();
         }
 

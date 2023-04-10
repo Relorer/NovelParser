@@ -14,14 +14,14 @@ namespace NovelParserBLL.Utilities
         public static string RemoveInvalidFilePathCharacters(string filename, string replaceChar = "")
         {
             string regexSearch = new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars());
-            Regex r = new Regex(string.Format("[{0}]", Regex.Escape(regexSearch)));
+            Regex r = new Regex($"[{Regex.Escape(regexSearch)}]");
             var result = r.Replace(filename, replaceChar);
             return result.Substring(0, Math.Min(result.Length, 100));
         }
 
-        public static ImageInfo UpdateImageInfo(ImageInfo imageInfo, string downloadFolder)
+        public static ImageInfo UpdateImageInfo(ImageInfo? imageInfo, string downloadFolder)
         {
-            if (imageInfo != null && !imageInfo.Exists && !string.IsNullOrEmpty(imageInfo.NameFromURL))
+            if (imageInfo is { Exists: false } && !string.IsNullOrEmpty(imageInfo.NameFromURL))
             {
                 var downloadedImagePath = Path.Combine(downloadFolder, imageInfo.NameFromURL);
 

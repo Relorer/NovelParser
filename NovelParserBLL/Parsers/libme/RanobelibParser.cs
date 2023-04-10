@@ -2,68 +2,83 @@
 using NovelParserBLL.Models;
 using NovelParserBLL.Properties;
 using NovelParserBLL.Services;
-using NovelParserBLL.Services.ChromeDriverHelper;
-using NovelParserBLL.Utilities;
 using System.Text.RegularExpressions;
+using AngleSharp.Dom;
+using AngleSharp.Html.Dom;
+using NovelParserBLL.Utilities;
 
-namespace NovelParserBLL.Parsers.libme
+namespace NovelParserBLL.Parsers.Libme;
+
+internal class RanobeLibMeParser : BaseLibMeParser
 {
-    internal class RanobeLibMeParser : BaseLibMeParser
+    public RanobeLibMeParser(SetProgress setProgress, HttpClient client) 
+        : base(setProgress, client) { }
+
+    public override string SiteDomain => "https://ranobelib.me/";
+
+    public override string SiteName => "RanobeLib.me";
+
+    public override async Task LoadChapters(Novel novel, string group, string pattern, bool includeImages, CancellationToken token)
     {
-        private static readonly string getRanobeContentScript = Resources.GetRanobeContentScript;
-
-        public RanobeLibMeParser(SetProgress setProgress) : base(setProgress)
+        var parsed = 1;
+        var nonLoadedChapters = novel[group, pattern].ForLoad(includeImages);
+        setProgress(nonLoadedChapters.Count, 0, Resources.ProgressStatusParsing);
+        foreach (var item in nonLoadedChapters)
         {
+            if (token.IsCancellationRequested) return;
+            await ParseChapter(novel, item, includeImages);
+            setProgress(nonLoadedChapters.Count, parsed++, Resources.ProgressStatusParsing);
         }
+    }
 
-        public override string SiteDomen => "https://ranobelib.me/";
+    public override string PrepareUrl(string url)
+    {
+        return SiteDomain + Regex.Match(url.Substring(SiteDomain.Length), @"[^(?|\/)]*").Value;
+    }
 
-        public override string SiteName => "RanobeLib.me";
+    public override bool ValidateUrl(string url)
+    {
+        return url.Length > SiteDomain.Length && url.StartsWith(SiteDomain) && PrepareUrl(url).Length > SiteDomain.Length;
+    }
 
-        public override Task LoadChapters(Novel novel, string group, string pattern, bool includeImages, CancellationToken cancellationToken)
+    private async Task ParseChapter(Novel novel, Chapter chapter, bool includeImages)
+    {
+        if (string.IsNullOrEmpty(chapter.Url)) return;
+
+        var pageContent = await GetPageContent(chapter.Url);
+        var pageDoc = await GetHtmlDocument(pageContent)
+                      ?? throw new ApplicationException("Can't parse page content");
+
+        var chapterContent = pageDoc.QuerySelector(".reader-container")
+                             ?? throw new ApplicationException("Can't parse page content");
+
+        var images = chapterContent.QuerySelectorAll("img")
+            .Cast<IHtmlImageElement>();
+        foreach (var image in images)
         {
-            return Task.Run(async () =>
-            {
-                var parsed = 1;
-                var nonLoadedChapters = novel[group, pattern].ForLoad(includeImages);
-                setProgress(nonLoadedChapters.Count, 0, Resources.ProgressStatusParsing);
-                foreach (var item in nonLoadedChapters)
-                {
-                    if (cancellationToken.IsCancellationRequested) return;
-                    await ParseChapter(novel, item, includeImages);
-                    setProgress(nonLoadedChapters.Count, parsed++, Resources.ProgressStatusParsing);
-                }
-            });
-        }
-
-        public override string PrepareUrl(string url)
-        {
-            return SiteDomen + Regex.Match(url.Substring(SiteDomen.Length), @"[^(?|\/)]*").Value;
-        }
-
-        public override bool ValidateUrl(string url)
-        {
-            return url.Length > SiteDomen.Length && url.StartsWith(SiteDomen) && PrepareUrl(url).Length > SiteDomen.Length;
-        }
-
-        private async Task ParseChapter(Novel novel, Chapter chapter, bool includeImages)
-        {
-            using (var driver = await ChromeDriverHelper.TryLoadPage(chapter.Url!, checkChallengeRunningScript, novel.DownloadFolderName))
-            {
-                chapter.Content = (string?)driver.ExecuteScript(getRanobeContentScript, includeImages) ?? "";
-            }
-
             if (includeImages)
             {
-                await Task.Delay(2000);
-                (chapter.Content, chapter.Images) = await htmlHelper.LoadImagesForHTML(chapter.Content, (img) =>
+                var source = image.GetAttribute("data-src") ?? image.Source;
+                image.ClearAttr();
+                if (string.IsNullOrWhiteSpace(source))
                 {
-                    string url = img.GetAttribute("src") ?? "";
-                    return Task.FromResult(FileHelper.UpdateImageInfo(new ImageInfo("", "", url), novel.DownloadFolderName));
-                });
+                    image.Remove();
+                    continue;
+                }
+                var filename = $"{Guid.NewGuid()}.png";
+                var fullPath = Path.Combine(novel.DownloadFolderName, filename);
+                await DownloadUrl(source, fullPath);
+                image.Source = $"{novel.DownloadFolderName}/{filename}";
+                image.SetAttribute("name", filename);
+                image.SetAttribute("alt", filename);
+                var imageInfo = FileHelper.UpdateImageInfo(new ImageInfo(fullPath, filename, image.Source), novel.DownloadFolderName);
+                chapter.Images.Add(imageInfo);
             }
-
-            chapter.ImagesLoaded = includeImages;
+            else
+                image.Remove();
         }
+
+        chapter.Content = chapterContent.InnerHtml;
+        chapter.ImagesLoaded = includeImages;
     }
 }

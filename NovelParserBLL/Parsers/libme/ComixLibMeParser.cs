@@ -1,11 +1,12 @@
-﻿using NovelParserBLL.Extensions;
+﻿/*
+using NovelParserBLL.Extensions;
 using NovelParserBLL.Models;
 using NovelParserBLL.Properties;
 using NovelParserBLL.Services;
 using NovelParserBLL.Services.ChromeDriverHelper;
 using System.Text.RegularExpressions;
 
-namespace NovelParserBLL.Parsers.libme
+namespace NovelParserBLL.Parsers.Libme
 {
     internal abstract class ComicsLibMeParser : BaseLibMeParser
     {
@@ -126,4 +127,4 @@ namespace NovelParserBLL.Parsers.libme
             public string Server { get; }
         }
     }
-}
+}*/

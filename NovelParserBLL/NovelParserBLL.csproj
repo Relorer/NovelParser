@@ -17,20 +17,22 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Resource Include="Parsers\CheckChallengeRunningScript.js" />
+    <None Remove="Resources\CoverTemplate.xhtml" />
+    <None Remove="Resources\PageTemplate.xhtml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\CoverTemplate.xhtml" />
+    <EmbeddedResource Include="Resources\PageTemplate.xhtml" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="AngleSharp" Version="0.17.1" />
-    <PackageReference Include="EpubSharp.dll" Version="1.1.5" />
     <PackageReference Include="FakeUserAgent" Version="1.0.2" />
-    <PackageReference Include="HarfBuzzSharp" Version="2.8.2.3" />
-    <PackageReference Include="HtmlAgilityPack" Version="1.11.46" />
+    <PackageReference Include="Jint" Version="2.11.58" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="QuestPDF" Version="2022.9.0" />
-    <PackageReference Include="Selenium.WebDriver" Version="4.4.0" />
-    <PackageReference Include="Selenium.WebDriver.ChromeDriver" Version="105.0.5195.5200" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="2.1.3" />
-    <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.1" />
+    <PackageReference Include="VIEApps.Components.Utility.Epub" Version="10.7.2303.2" />
   </ItemGroup>
 
   <ItemGroup>

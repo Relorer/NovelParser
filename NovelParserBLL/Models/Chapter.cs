@@ -6,7 +6,7 @@
         public string? Url { get; set; }
         public string? Number { get; set; }
         public string? Content { get; set; }
-        public List<ImageInfo> Images { get; set; } = new List<ImageInfo>();
+        public List<ImageInfo> Images { get; set; } = new ();
         public bool ImagesLoaded { get; set; }
     }
 }

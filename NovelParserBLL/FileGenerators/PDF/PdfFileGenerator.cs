@@ -1,9 +1,9 @@
-﻿using HTMLQuestPDF;
-using HTMLQuestPDF.Extensions;
+﻿using HTMLQuestPDF.Extensions;
 using NovelParserBLL.Models;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Previewer;
+using Document = QuestPDF.Fluent.Document;
 
 namespace NovelParserBLL.FileGenerators.PDF
 {
@@ -13,29 +13,29 @@ namespace NovelParserBLL.FileGenerators.PDF
         {
             return Task.Run(() =>
             {
-                GetDocumnet(generationParams).GeneratePdf(generationParams.FilePath);
+                GetDocument(generationParams).GeneratePdf(generationParams.FilePath);
             });
         }
 
         public void ShowInPreviewer(PDFGenerationParams generationParams)
         {
-            var document = GetDocumnet(generationParams);
+            var document = GetDocument(generationParams);
             document.ShowInPreviewer();
             document.GeneratePdf(generationParams.FilePath);
         }
-
-        private Document GetDocumnet(PDFGenerationParams generationParams)
+        //todo переделать
+        private Document GetDocument(PDFGenerationParams generationParams)
         {
             var novel = generationParams.Novel;
 
-            var chaptersWithCover = new SortedList<int, Chapter>(generationParams.Chapters);
+            var chaptersWithCover = new SortedList<float, Chapter>(generationParams.Chapters);
             if (novel.Cover != null)
             {
-                chaptersWithCover.Add(-1, new Chapter()
+                chaptersWithCover.Add(-1, new Chapter
                 {
                     Name = "Cover",
                     Content = $"<div><a><img src=\"{novel.Cover.Name}\"/></a></div>",
-                    Images = new List<ImageInfo>()
+                    Images = new List<ImageInfo>
                     {
                         novel.Cover
                     }
