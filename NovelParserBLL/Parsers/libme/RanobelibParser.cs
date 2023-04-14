@@ -82,7 +82,7 @@ internal class RanobeLibMeParser : BaseLibMeParser
         var filename = $"{Guid.NewGuid()}.png";
         var fullPath = Path.Combine(downloadDir, filename);
         var source = image.GetAttribute("data-src") ?? image.Source ?? string.Empty;
-        if (!await TryDownloadImage(source, fullPath))
+        if (!await TryDownloadFileAsync(source, fullPath))
         {
             image.Remove();
             return null;

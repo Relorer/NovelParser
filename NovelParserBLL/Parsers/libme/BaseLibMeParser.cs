@@ -61,7 +61,7 @@ internal abstract class BaseLibMeParser : INovelParser
         {
             var coverUrl = GetNovelCoverUrl(htmlDoc, novelInfo.manga.name);
             tempNovel.Cover = novel.Cover ?? new ImageInfo(novel.DownloadFolderName, coverUrl);
-            await DownloadUrl(tempNovel.Cover.URL, tempNovel.Cover.FullPath, token);
+            await DownloadFileAsync(tempNovel.Cover.URL, tempNovel.Cover.FullPath, token);
         }
 
         tempNovel.ChaptersByGroup = GetChapters(novelInfo);
@@ -77,7 +77,7 @@ internal abstract class BaseLibMeParser : INovelParser
     {
         return await _webClient.GetStringContentAsync(url, token: token);
     }
-    protected async Task DownloadUrl(string url, string fullPath, CancellationToken token = default)
+    protected async Task DownloadFileAsync(string url, string fullPath, CancellationToken token = default)
     {
         var content = await _webClient.GetBinaryContentAsync(url, token: token);
         if (!content.Any()) return;
@@ -86,11 +86,11 @@ internal abstract class BaseLibMeParser : INovelParser
         await fs.WriteAsync(content, token);
         await fs.FlushAsync(token);
     }
-    protected async Task<bool> TryDownloadImage(string source, string destination)
+    protected async Task<bool> TryDownloadFileAsync(string source, string destination)
     {
         if (string.IsNullOrWhiteSpace(source)) return false;
 
-        await DownloadUrl(source, destination);
+        await DownloadFileAsync(source, destination);
         return File.Exists(destination);
     }
     protected static void SetImageSource(IHtmlImageElement image, string newSource)

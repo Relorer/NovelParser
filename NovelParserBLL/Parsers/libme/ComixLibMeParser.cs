@@ -1,5 +1,4 @@
-﻿
-using NovelParserBLL.Extensions;
+﻿using NovelParserBLL.Extensions;
 using NovelParserBLL.Models;
 using NovelParserBLL.Properties;
 using NovelParserBLL.Services;
@@ -7,9 +6,7 @@ using System.Text.RegularExpressions;
 using AngleSharp;
 using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
-using HtmlAgilityPack;
 using Jint;
-using Jint.Parser.Ast;
 using Newtonsoft.Json;
 using NovelParserBLL.Parsers.DTO;
 using NovelParserBLL.Services.Interfaces;
@@ -93,7 +90,7 @@ internal abstract class ComicsLibMeParser : BaseLibMeParser
                 {
                     var fullPath = Path.Combine(downloadFolderName, imageInfo.Name);
                     var downloadUrl = $"{server.Server + imageInfo.URL}?name={imageInfo.Name}";
-                    await DownloadUrl(downloadUrl, fullPath, token);
+                    await DownloadFileAsync(downloadUrl, fullPath, token);
                 }
 
                 server.CountImages += batch.Count;
@@ -131,7 +128,7 @@ internal abstract class ComicsLibMeParser : BaseLibMeParser
             var imageRemoteUrl = HtmlPathHelper.Combine(baseUrl,page.Url);
             var imageInfo = new ImageInfo(downloadDir, imageRemoteUrl);
             var imageLocalUrl = HtmlPathHelper.Combine(downloadDir, imageInfo.Name);
-            if (!await TryDownloadImage(imageRemoteUrl, imageLocalUrl))
+            if (!await TryDownloadFileAsync(imageRemoteUrl, imageLocalUrl))
                 continue;
 
             AddImageToDocument(chapterDoc, imageLocalUrl);

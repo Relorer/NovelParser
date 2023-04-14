@@ -2,6 +2,7 @@
 
 namespace NovelParserBLL.Parsers.DTO;
 
+#nullable disable
 public class ComicPage
 {
     [JsonProperty("p")]
@@ -9,3 +10,4 @@ public class ComicPage
     [JsonProperty("u")]
     public string Url { get; set; }
 }
+#nullable restore

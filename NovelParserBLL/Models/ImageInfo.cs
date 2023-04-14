@@ -6,7 +6,8 @@ public class ImageInfo
 {
     public ImageInfo(string directory, string url)
     {
-        Name = $"{Guid.NewGuid()}.image";
+        var ext = Path.GetExtension(url);
+        Name = $"{Guid.NewGuid()}{ext}";
         FullPath = Path.Combine(directory, Name);
         URL = url;
     }

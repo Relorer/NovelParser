@@ -1,5 +1,6 @@
 ﻿namespace NovelParserBLL.Parsers.DTO;
 
+#nullable disable
 public class ComicCurrent
 {
     public int id { get; set; }
@@ -9,3 +10,4 @@ public class ComicCurrent
     public object status { get; set; }
     public int price { get; set; }
 }
+#nullable restore

@@ -1,5 +1,6 @@
 ﻿namespace NovelParserBLL.Parsers.DTO;
 
+#nullable disable
 public class ComicMediaInfo
 {
     public int page { get; set; }
@@ -11,3 +12,4 @@ public class ComicMediaInfo
     public ComicImg img { get; set; }
     public ComicServers servers { get; set; }
 }
+#nullable restore
