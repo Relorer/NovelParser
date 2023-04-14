@@ -23,7 +23,7 @@ public class ImageInfo
     public bool Exists => !string.IsNullOrEmpty(FullPath) && File.Exists(FullPath);
 
     [JsonIgnore]
-    public string NameFromURL => URL.Substring(URL.LastIndexOf('/') + 1);
+    public string NameFromURL => Path.GetFileName(URL);
 
     public string FullPath { get; }
     public string Name { get; }

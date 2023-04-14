@@ -36,12 +36,12 @@ namespace NovelParserWPF.ViewModels
             ParserInfos = commonNovelParser.ParserInfos;
 
             FileFormatsForGenerator = new List<RadioButton>() {
-                new RadioButton() {
+                new RadioButton {
                     GroupName = nameof(FileFormatsForGenerator),
                     Content = FileFormat.EPUB,
                     IsChecked = true
                 },
-                new RadioButton() {
+                new RadioButton {
                     GroupName = nameof(FileFormatsForGenerator),
                     Content = FileFormat.PDF,
                 }
@@ -175,7 +175,7 @@ namespace NovelParserWPF.ViewModels
             Novel = await commonNovelParser.ParseCommonInfo(NovelLink, cancellationToken);
             if (Novel != null && !string.IsNullOrEmpty(Novel.Name))
             {
-                string desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                var desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
                 SavePath = Path.Combine(desktop, NovelParserBLL.Utilities.FileHelper.RemoveInvalidFilePathCharacters(Novel.Name));
                 SelectedTranslationTeam = TranslationTeams.First();
             }
@@ -229,10 +229,7 @@ namespace NovelParserWPF.ViewModels
         public bool UseCookies
         {
             get => bool.Parse(ConfigurationManager.AppSettings["UseCookies"] ?? "false");
-            set
-            {
-                SettingsHelper.AddOrUpdateAppSettings("UseCookies", value.ToString());
-            }
+            set => SettingsHelper.AddOrUpdateAppSettings("UseCookies", value.ToString());
         }
 
         //private ChromeDriver? authDriver;

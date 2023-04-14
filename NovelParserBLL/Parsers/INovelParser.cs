@@ -8,7 +8,7 @@ namespace NovelParserBLL.Parsers
 
         Task LoadChapters(Novel novel, string group, string pattern, bool includeImages, CancellationToken token);
 
-        Task<Novel> ParseCommonInfo(Novel novel, CancellationToken cancellationToken);
+        Task<Novel> ParseCommonInfo(Novel novel, CancellationToken token);
 
         bool ValidateUrl(string url);
 

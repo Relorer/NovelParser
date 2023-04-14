@@ -5,29 +5,31 @@ using AngleSharp.Html.Dom;
 using AngleSharp.Html.Parser;
 using Jint;
 using Newtonsoft.Json;
-using NovelParserBLL.JsDTO;
 using NovelParserBLL.Models;
+using NovelParserBLL.Parsers.DTO;
 using NovelParserBLL.Properties;
 using NovelParserBLL.Services;
+using NovelParserBLL.Services.Interfaces;
 using NovelParserBLL.Utilities;
 
-namespace NovelParserBLL.Parsers.Libme;
+namespace NovelParserBLL.Parsers.LibMe;
 
 internal abstract class BaseLibMeParser : INovelParser
 {
     private const string InfoScriptStartPattern = @"(?i)^window\.__DATA__(?-i)";
-    private readonly HttpClient _client;
+    private readonly IWebClient _webClient;
     protected readonly SetProgress setProgress;
     
-    protected BaseLibMeParser(SetProgress setProgress, HttpClient client)
+    protected BaseLibMeParser(SetProgress setProgress, IWebClient webClient)
     {
         this.setProgress = setProgress;
-        _client = client;
+        _webClient = webClient;
     }
 
     public abstract string SiteDomain { get; }
     public abstract string SiteName { get; }
     public ParserInfo ParserInfo => new (SiteDomain, SiteName, "https://lib.social/login");
+
     public abstract Task LoadChapters(Novel novel, string group, string pattern, bool includeImages, CancellationToken token);
     public async Task<Novel> ParseCommonInfo(Novel novel, CancellationToken token)
     {
@@ -38,11 +40,11 @@ internal abstract class BaseLibMeParser : INovelParser
 
         if (string.IsNullOrEmpty(novel.URL)) return novel;
 
-        var content = await GetPageContent(novel.URL, token);
-        var htmlDoc = await GetHtmlDocument(content, token);
+        var content = await _webClient.GetStringContentAsync(novel.URL, token: token);
+        var htmlDoc = await ParseHtmlDocument(content, token);
         if (htmlDoc == null) return novel;
 
-        var infoScript = GetInfoScript(htmlDoc);
+        var infoScript = FindScript(htmlDoc, InfoScriptStartPattern);
         if (string.IsNullOrEmpty(infoScript)) return novel;
 
         var novelInfo = GetNovelInfo(infoScript);
@@ -59,7 +61,7 @@ internal abstract class BaseLibMeParser : INovelParser
         {
             var coverUrl = GetNovelCoverUrl(htmlDoc, novelInfo.manga.name);
             tempNovel.Cover = novel.Cover ?? new ImageInfo(novel.DownloadFolderName, coverUrl);
-            await DownloadUrl(tempNovel.Cover.URL, tempNovel.Cover.FullPath);
+            await DownloadUrl(tempNovel.Cover.URL, tempNovel.Cover.FullPath, token);
         }
 
         tempNovel.ChaptersByGroup = GetChapters(novelInfo);
@@ -73,48 +75,60 @@ internal abstract class BaseLibMeParser : INovelParser
 
     protected async Task<string> GetPageContent(string url, CancellationToken token = default)
     {
-        var response = await _client.GetAsync(url, token);
-        if (!response.IsSuccessStatusCode) 
-            return string.Empty;
-
-        var content = await response.Content.ReadAsStringAsync(token);
-        return content;
+        return await _webClient.GetStringContentAsync(url, token: token);
     }
-    protected async Task DownloadUrl(string url, string fullPath)
+    protected async Task DownloadUrl(string url, string fullPath, CancellationToken token = default)
     {
-        var content = await _client.GetByteArrayAsync(url);
-        await using var fs = new FileStream(fullPath, FileMode.CreateNew, FileAccess.Write);
-        await fs.WriteAsync(content);
-        await fs.FlushAsync();
-    }
+        var content = await _webClient.GetBinaryContentAsync(url, token: token);
+        if (!content.Any()) return;
 
-    protected static async Task<IHtmlDocument?> GetHtmlDocument(string content, CancellationToken token = default)
+        await using var fs = new FileStream(fullPath, FileMode.CreateNew, FileAccess.Write);
+        await fs.WriteAsync(content, token);
+        await fs.FlushAsync(token);
+    }
+    protected async Task<bool> TryDownloadImage(string source, string destination)
+    {
+        if (string.IsNullOrWhiteSpace(source)) return false;
+
+        await DownloadUrl(source, destination);
+        return File.Exists(destination);
+    }
+    protected static void SetImageSource(IHtmlImageElement image, string newSource)
+    {
+        var filename = Path.GetFileName(newSource);
+        image.ClearAttr();
+        image.Source = newSource;
+        image.SetAttribute("src", newSource);
+        image.SetAttribute("name", filename);
+        image.SetAttribute("alt", filename);
+    }
+    protected static async Task<IHtmlDocument?> ParseHtmlDocument(string content, CancellationToken token = default)
     {
         var parser = new HtmlParser();
         return await parser.ParseDocumentAsync(content, token);
     }
-    private static string GetInfoScript(IParentNode doc)
+    protected static string FindScript(IParentNode doc, string pattern)
     {
         var scripts = doc.QuerySelectorAll("script");
 
         return scripts.FirstOrDefault(s => 
-                Regex.IsMatch(s.InnerHtml.Trim(), InfoScriptStartPattern))?
-            .InnerHtml.Trim() 
-               ?? string.Empty;
+                Regex.IsMatch(s.InnerHtml.Trim(), pattern))?
+            .InnerHtml.Trim()
+               ?? throw new ApplicationException($"Cannot find pattern {pattern}.");
     }
-    private static JsNovelInfo? GetNovelInfo(string contentScript)
+    
+    private static SiteNovelInfo? GetNovelInfo(string contentScript)
     {
         var jsEngine = new Engine();
         jsEngine.Execute("var window = {__DATA__:{}};");
         jsEngine.Execute(contentScript);
         jsEngine.Execute("var jsonData = JSON.stringify(window.__DATA__);");
+
         var novelInfoJson = jsEngine.GetValue("jsonData").AsString();
         
-        return string.IsNullOrEmpty(novelInfoJson) 
-            ? null 
-            : JsonConvert.DeserializeObject<JsNovelInfo>(novelInfoJson);
+        return JsonConvert.DeserializeObject<SiteNovelInfo>(novelInfoJson);
     }
-    private static string GetNovelName(JsNovelInfo info)
+    private static string GetNovelName(SiteNovelInfo info)
     {
         var name = info.manga.engName;
         if (string.IsNullOrWhiteSpace(name)) name = info.manga.rusName;
@@ -146,13 +160,13 @@ internal abstract class BaseLibMeParser : INovelParser
                     as IHtmlImageElement;
         return image?.Source ?? string.Empty;
     }
-    private static Dictionary<string, SortedList<float, Chapter>> GetChapters(JsNovelInfo jsInfo)
+    private static Dictionary<string, SortedList<float, Chapter>> GetChapters(SiteNovelInfo jsInfo)
     {
         var result = new Dictionary<string, SortedList<float, Chapter>>();
 
         var branches = jsInfo.chapters.branches.Length > 0
             ? jsInfo.chapters.branches
-            : new JsBranch[] { new() { id = "nobranches", name = "none" } };
+            : new SiteBranch[] { new() { id = "nobranches", name = "none" } };
 
         var slug = jsInfo.manga.slug;
 
@@ -181,6 +195,4 @@ internal abstract class BaseLibMeParser : INovelParser
 
         return result;
     }
-
-    
 }

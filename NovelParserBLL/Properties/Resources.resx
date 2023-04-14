@@ -120,25 +120,6 @@
   <data name="CacheFolder" xml:space="preserve">
     <value>cache</value>
   </data>
-  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="CheckChallengeRunningScript" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\parsers\libme\scripts\checkchallengerunningscript.js;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="DownloadImagesScript" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\services\chromedriverhelper\downloadimagesscript.js;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="GetChaptersScript" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\parsers\libme\scripts\getchaptersscript.js;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="GetComicsContentScript" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\parsers\libme\scripts\getcomicscontentscript.js;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="GetNovelInfoScript" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\parsers\libme\scripts\getnovelinfoscript.js;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
-  <data name="GetRanobeContentScript" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\parsers\libme\scripts\getranobecontentscript.js;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
-  </data>
   <data name="ProgressStatusImageLoading" xml:space="preserve">
     <value>Downloading Images</value>
   </data>

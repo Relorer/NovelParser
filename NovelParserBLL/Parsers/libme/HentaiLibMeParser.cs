@@ -1,22 +1,23 @@
-﻿//using NovelParserBLL.Services;
+﻿using NovelParserBLL.Services;
+using NovelParserBLL.Services.Interfaces;
 
-//namespace NovelParserBLL.Parsers.Libme
-//{
-//    internal class HentaiLibMeParser : ComicsLibMeParser
-//    {
-//        public HentaiLibMeParser(SetProgress setProgress) : base(setProgress)
-//        {
-//        }
+namespace NovelParserBLL.Parsers.LibMe;
 
-//        public override string SiteName => "HentaiLib.me";
+internal class HentaiLibMeParser : ComicsLibMeParser
+{
+    public HentaiLibMeParser(SetProgress setProgress, IWebClient webClient) 
+        : base(setProgress, webClient)
+    {
+    }
 
-//        public override string SiteDomen => "https://hentailib.me/";
+    public override string SiteName => "HentaiLib.me";
 
-//        protected override List<string> servers => new List<string>()
-//        {
-//            "https://img2.hentailib.org",
-//            "https://img3.hentailib.org",
-//            "https://img4.hentailib.org",
-//        };
-//    }
-//}
+    public override string SiteDomain => "https://hentailib.me/";
+
+    protected override List<string> Servers => new()
+    {
+        "https://img2.hentailib.org",
+        "https://img3.hentailib.org",
+        "https://img4.hentailib.org",
+    };
+}
