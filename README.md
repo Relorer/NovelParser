@@ -1,4 +1,5 @@
 # NovelParser
+This is a fork from https://github.com/Relorer/NovelParser
 
 This application allows you to download novels from the [ranobelib.me](https://ranobelib.me/). [You can download the prepared exe here](https://github.com/Relorer/NovelParser/releases/tag/v1.0.1)
 
