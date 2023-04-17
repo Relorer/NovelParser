@@ -53,4 +53,8 @@
     <Resource Include="Assets\GitHub.png" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Converters\" />
+  </ItemGroup>
+
 </Project>

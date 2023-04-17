@@ -1,10 +1,12 @@
-﻿using System.Globalization;
+﻿// ReSharper disable StringLiteralTypo
+
 using System.Text.RegularExpressions;
 using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
 using AngleSharp.Html.Parser;
 using Jint;
 using Newtonsoft.Json;
+using NovelParserBLL.Extensions;
 using NovelParserBLL.Models;
 using NovelParserBLL.Parsers.DTO;
 using NovelParserBLL.Properties;
@@ -12,17 +14,19 @@ using NovelParserBLL.Services;
 using NovelParserBLL.Services.Interfaces;
 using NovelParserBLL.Utilities;
 
+
 namespace NovelParserBLL.Parsers.LibMe;
 
-internal abstract class BaseLibMeParser : INovelParser
+internal abstract class BaseLibMeParser
 {
     private const string InfoScriptStartPattern = @"(?i)^window\.__DATA__(?-i)";
+
     private readonly IWebClient _webClient;
-    protected readonly SetProgress setProgress;
+    protected readonly SetProgress SetProgress;
     
     protected BaseLibMeParser(SetProgress setProgress, IWebClient webClient)
     {
-        this.setProgress = setProgress;
+        SetProgress = setProgress;
         _webClient = webClient;
     }
 
@@ -30,10 +34,9 @@ internal abstract class BaseLibMeParser : INovelParser
     public abstract string SiteName { get; }
     public ParserInfo ParserInfo => new (SiteDomain, SiteName, "https://lib.social/login");
 
-    public abstract Task LoadChapters(Novel novel, string group, string pattern, bool includeImages, CancellationToken token);
     public async Task<Novel> ParseCommonInfo(Novel novel, CancellationToken token)
     {
-        setProgress(0, 0, Resources.ProgressStatusLoading);
+        SetProgress(0, 0, Resources.ProgressStatusLoading);
 
         if (!Directory.Exists(novel.DownloadFolderName))
             Directory.CreateDirectory(novel.DownloadFolderName);
@@ -65,13 +68,12 @@ internal abstract class BaseLibMeParser : INovelParser
         }
 
         tempNovel.ChaptersByGroup = GetChapters(novelInfo);
+
         novel.Merge(tempNovel);
         novel.Cover = FileHelper.UpdateImageInfo(novel.Cover, novel.DownloadFolderName);
 
         return novel;
     }
-    public abstract string PrepareUrl(string url);
-    public abstract bool ValidateUrl(string url);
 
     protected async Task<string> GetPageContent(string url, CancellationToken token = default)
     {
@@ -160,39 +162,36 @@ internal abstract class BaseLibMeParser : INovelParser
                     as IHtmlImageElement;
         return image?.Source ?? string.Empty;
     }
-    private static Dictionary<string, SortedList<float, Chapter>> GetChapters(SiteNovelInfo jsInfo)
+    private static Dictionary<string, List<Chapter>> GetChapters(SiteNovelInfo siteInfo)
     {
-        var result = new Dictionary<string, SortedList<float, Chapter>>();
+        var result = new Dictionary<string, List<Chapter>>();
 
-        var branches = jsInfo.chapters.branches.Length > 0
-            ? jsInfo.chapters.branches
+        var slug = siteInfo.manga.slug;
+        var branches = siteInfo.chapters.branches.Length > 0
+            ? siteInfo.chapters.branches
             : new SiteBranch[] { new() { id = "nobranches", name = "none" } };
-
-        var slug = jsInfo.manga.slug;
-
+        
         foreach (var branch in branches)
         {
-            var chapters = jsInfo.chapters.list.Where(ch => ch.branch_id == branch.id || branch.id == "nobranches");
-            var chaptersList = new SortedList<float, Chapter>();
-            foreach (var chapter in chapters)
-            {
-                var chapInfo = new Chapter
-                {
-                    Name = chapter.chapter_name,
-                    Number = chapter.chapter_number,
-                    Url = $@"https://ranobelib.me/{slug}/v{chapter.chapter_volume}/c{chapter.chapter_number}"
-                };
-                //todo Что-то сделать с именованием глав...
-                var chapNumber = float.Parse(chapter.chapter_number, CultureInfo.InvariantCulture.NumberFormat);
-                while (chaptersList.ContainsKey(chapNumber))
-                {
-                    chapNumber += 0.01f;
-                }
-                chaptersList.Add(chapNumber, chapInfo);
-            }
-            result.Add(branch.id, chaptersList);
-        }
+            var chapters = siteInfo.chapters.list
+                .Where(ch => ch.branch_id == branch.id || branch.id == "nobranches");
+            var chaptersList = chapters.Select(chapter => 
+                new Chapter 
+                    { 
+                        Name = chapter.chapter_name, 
+                        Number = chapter.chapter_number, 
+                        Volume = chapter.chapter_volume, 
+                        Url = BuildChapterUrl(slug, chapter.chapter_volume, chapter.chapter_number)
+                    }).ToList();
 
+            result.Add(branch.id, chaptersList.SortChapters());
+        }
+        
         return result;
+    }
+
+    private static string BuildChapterUrl(string slug, int volume, string number)
+    {
+        return $@"https://ranobelib.me/{slug}/v{volume}/c{number}";
     }
 }

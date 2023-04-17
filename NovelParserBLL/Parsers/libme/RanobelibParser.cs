@@ -9,7 +9,7 @@ using NovelParserBLL.Utilities;
 
 namespace NovelParserBLL.Parsers.LibMe;
 
-internal class RanobeLibMeParser : BaseLibMeParser
+internal class RanobeLibMeParser : BaseLibMeParser, INovelParser
 {
     public RanobeLibMeParser(SetProgress setProgress, IWebClient webClient) 
         : base(setProgress, webClient) { }
@@ -17,12 +17,12 @@ internal class RanobeLibMeParser : BaseLibMeParser
     public override string SiteDomain => "https://ranobelib.me/";
     public override string SiteName => "RanobeLib.me";
 
-    public override async Task LoadChapters(Novel novel, string group, string pattern, bool includeImages, CancellationToken token)
+    public async Task LoadChapters(Novel novel, string group, string pattern, bool includeImages, CancellationToken token)
     {
         var parsed = 1;
         var nonLoadedChapters = novel[group, pattern].ForLoad(includeImages);
 
-        setProgress(nonLoadedChapters.Count, 0, Resources.ProgressStatusParsing);
+        SetProgress(nonLoadedChapters.Count, 0, Resources.ProgressStatusParsing);
         
         foreach (var item in nonLoadedChapters)
         {
@@ -30,16 +30,16 @@ internal class RanobeLibMeParser : BaseLibMeParser
 
             await ParseChapter(novel, item, includeImages);
             
-            setProgress(nonLoadedChapters.Count, parsed++, Resources.ProgressStatusParsing);
+            SetProgress(nonLoadedChapters.Count, parsed++, Resources.ProgressStatusParsing);
         }
     }
 
-    public override string PrepareUrl(string url)
+    public string PrepareUrl(string url)
     {
         return SiteDomain + Regex.Match(url[SiteDomain.Length..], @"[^(?|\/)]*").Value;
     }
 
-    public override bool ValidateUrl(string url)
+    public bool ValidateUrl(string url)
     {
         return url.Length > SiteDomain.Length 
                && url.StartsWith(SiteDomain) 

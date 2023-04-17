@@ -17,6 +17,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
+using NovelParserBLL.Extensions;
 
 namespace NovelParserWPF.ViewModels
 {
@@ -55,10 +56,10 @@ namespace NovelParserWPF.ViewModels
         public List<string> TranslationTeams => Novel?.ChaptersByGroup?.Keys.ToList() ?? new List<string>();
 
         public int TotalChapters => chaptersCurrentTeam?.Count ?? 0;
+        public int TotalVolumes => chaptersCurrentTeam?.VolumesCount() ?? 0;
+        private List<Chapter>? chaptersCurrentTeam => Novel?[SelectedTranslationTeam, "all"];
 
-        private SortedList<float, Chapter>? chaptersCurrentTeam => Novel?[SelectedTranslationTeam, "all"];
-
-        public SortedList<float, Chapter>? ChaptersToDownload => Novel?[SelectedTranslationTeam, ListChaptersPattern];
+        public List<Chapter>? ChaptersToDownload => Novel?[SelectedTranslationTeam, ListChaptersPattern];
 
         public BitmapImage? Cover => Novel?.Cover?.TryGetByteArray(out byte[]? cover) ?? false ? ImageHelper.BitmapImageFromBuffer(cover!) : null;
 
@@ -124,12 +125,11 @@ namespace NovelParserWPF.ViewModels
                 {
                     cancellationTokenSource?.Cancel();
                     ProgressButtonText = "Canceling";
-                    if (loadingTask == null || loadingTask.Status > TaskStatus.WaitingForChildrenToComplete)
-                    {
-                        cancellationTokenSource?.Dispose();
-                        isLoadingProgressButton = false;
-                        ProgressButtonText = Novel == null ? "Get" : "Start";
-                    }
+                    if (loadingTask != null && loadingTask.Status <= TaskStatus.WaitingForChildrenToComplete) 
+                        return;
+                    cancellationTokenSource?.Dispose();
+                    isLoadingProgressButton = false;
+                    ProgressButtonText = Novel == null ? "Get" : "Start";
                 }
                 else if (value)
                 {
@@ -150,8 +150,6 @@ namespace NovelParserWPF.ViewModels
 
             try
             {
-                //TryCloseAuthDriver();
-
                 if (Novel == null)
                 {
                     await GetNovelInfo(cancellationToken);

@@ -3,41 +3,37 @@ using NovelParserBLL.Models;
 using NovelParserBLL.Properties;
 using NovelParserBLL.Utilities;
 
-namespace NovelParserBLL.Services
+namespace NovelParserBLL.Services;
+
+public class NovelCacheService
 {
-    public class NovelCacheService
+    private static readonly string cacheFolder = Path.Combine(Directory.GetCurrentDirectory(), Resources.CacheFolder);
+
+    static NovelCacheService()
     {
-        private static string cacheFolder = Path.Combine(Directory.GetCurrentDirectory(), Resources.CacheFolder);
+        if (!Directory.Exists(cacheFolder)) Directory.CreateDirectory(cacheFolder);
+    }
 
-        static NovelCacheService()
-        {
-            if (!Directory.Exists(cacheFolder)) Directory.CreateDirectory(cacheFolder);
-        }
+    public void SaveNovelToFile(Novel novel)
+    {
+        var json = JsonConvert.SerializeObject(novel, Formatting.Indented);
+        var path = Path.Combine(cacheFolder, FileHelper.RemoveInvalidFilePathCharacters(novel.URL!) + ".json");
+        File.WriteAllText(path, json);
+    }
 
-        public void SaveNovelToFile(Novel novel)
-        {
-            string json = JsonConvert.SerializeObject(novel, Formatting.Indented);
-            var path = Path.Combine(cacheFolder, FileHelper.RemoveInvalidFilePathCharacters(novel.URL!) + ".json");
-            File.WriteAllText(path, json);
-        }
+    public Novel? TryGetNovelFromFile(string url)
+    {
+        var path = Path.Combine(cacheFolder, FileHelper.RemoveInvalidFilePathCharacters(url) + ".json");
+        if (!File.Exists(path)) return null;
+        var json = File.ReadAllText(path);
+        return JsonConvert.DeserializeObject<Novel?>(json);
+    }
 
-        public Novel? TryGetNovelFromFile(string url)
+    public void ClearCache()
+    {
+        if (Directory.Exists(cacheFolder))
         {
-            var path = Path.Combine(cacheFolder, FileHelper.RemoveInvalidFilePathCharacters(url) + ".json");
-            if (File.Exists(path))
-            {
-                var json = File.ReadAllText(path);
-                return JsonConvert.DeserializeObject<Novel?>(json);
-            }
-            return null;
-        }
-
-        public void ClearCache()
-        {
-            if (Directory.Exists(cacheFolder))
-            {
-                DirectoryHelper.Empty(cacheFolder);
-            }
+            DirectoryHelper.Empty(cacheFolder);
         }
     }
 }

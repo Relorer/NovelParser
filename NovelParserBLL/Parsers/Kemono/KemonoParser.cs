@@ -68,7 +68,7 @@ internal class KemonoParser : INovelParser
 
         if (chapterCount != novel.ChaptersByGroup?.FirstOrDefault().Value.Count)
         {
-            novel.ChaptersByGroup = new Dictionary<string, SortedList<float, Chapter>> {
+            novel.ChaptersByGroup = new Dictionary<string, List<Chapter>> {
                 { "none", await GetChapters(novel.URL, chapterCount, token) }
             };
         }
@@ -104,9 +104,9 @@ internal class KemonoParser : INovelParser
         return await parser.ParseDocumentAsync(content);
     }
 
-    private async Task<SortedList<float, Chapter>> GetChapters(string url, int count, CancellationToken token)
+    private async Task<List<Chapter>> GetChapters(string url, int count, CancellationToken token)
     {
-        var chapters = new SortedList<float, Chapter>();
+        var chapters = new List<Chapter>();
 
         var j = count;
 
@@ -119,7 +119,7 @@ internal class KemonoParser : INovelParser
             {
                 var chapterUrl = ParserInfo.SiteDomain + item.GetAttribute("href");
                 var title = item.TextContent;
-                chapters.Add(j, new Chapter { Name = title, Url = chapterUrl, Content = "", Number = j.ToString() });
+                chapters.Add(new Chapter { Name = title, Url = chapterUrl, Content = "", Number = j.ToString() });
                 j--;
             }
 

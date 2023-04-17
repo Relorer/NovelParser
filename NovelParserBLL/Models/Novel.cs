@@ -8,7 +8,7 @@ namespace NovelParserBLL.Models
     public class Novel
     {
         public string? Author { get; set; }
-        public Dictionary<string, SortedList<float, Chapter>>? ChaptersByGroup { get; set; }
+        public Dictionary<string, List<Chapter>>? ChaptersByGroup { get; set; }
         public ImageInfo? Cover { get; set; }
         public string? Description { get; set; }
         public string? Name { get; set; }
@@ -17,89 +17,55 @@ namespace NovelParserBLL.Models
         [JsonIgnore]
         public string DownloadFolderName => Path.Combine(Resources.CacheFolder, FileHelper.RemoveInvalidFilePathCharacters(URL ?? ""));
 
-        public SortedList<float, Chapter> this[string? group, string? pattern]
+        //todo Переработать с учетом томов
+        public List<Chapter> this[string? group, string? pattern]
         {
             get
             {
+                var result = new List<Chapter>();
+
                 if (string.IsNullOrEmpty(group) || string.IsNullOrEmpty(pattern) ||
-                    (!ChaptersByGroup?.ContainsKey(group) ?? false)) return new SortedList<float, Chapter>();
+                    (!ChaptersByGroup?.ContainsKey(group) ?? false))
+                    return result;
 
-                var chapters = ChaptersByGroup![group];
+                var chapters = ChaptersByGroup?[group];
+                if (chapters == null)
+                    return result;
 
-                var result = new SortedList<float, Chapter>(chapters?.Count ?? 0);
+                return chapters.SortChapters();
+                //var lastChapterIndex = chapters.Count - 1;
+                //var parts = pattern.RemoveWhiteSpaces().ToLower().Split(',');
 
-                if (chapters == null) return result;
+                //foreach (var part in parts)
+                //{
+                //    if (part.Equals("all")) return chapters;
 
-                var parts = pattern.RemoveWhiteSpaces().ToLower().Split(',');
+                //    if (part.Contains('-'))
+                //    {
+                //        var nums = part.Split('-');
+                //        var containsNum1 = int.TryParse(nums[0], out var num1);
+                //        var containsNum2 = int.TryParse(nums[1], out var num2);
 
-                foreach (var part in parts)
-                {
-                    if (part.Equals("all"))
-                    {
-                        return chapters;
-                    }
-                    if (part.Contains('-'))
-                    {
-                        var nums = part.Split('-');
 
-                        var containsNum1 = float.TryParse(nums[0], out var num1);
-                        var containsNum2 = float.TryParse(nums[1], out var num2);
+                //        var start = containsNum1 ? num1 : 1;
+                //        var end = containsNum2 ? num2 : lastChapterIndex;
 
-                        var start = containsNum1 ? num1 : 1;
-                        var end = containsNum2 ? num2 : chapters.Last().Key;
-                        if (end < start) (start, end) = (end, start);
-                        start = Math.Max(1, start);
-                        end = Math.Min(chapters.Last().Key, end);
+                //        if (end < start) (start, end) = (end, start);
 
-                        var list = chapters.Where(ch => ch.Key >= start && ch.Key <= end);
-                        foreach (var item in list)
-                        {
-                            result.Add(item.Key, item.Value);
-                        }
-                    }
-                    else if (float.TryParse(part, out var num))
-                    {
-                        var index = Math.Min(chapters.Last().Key, num);
-                        if (chapters.TryGetValue(index, out var ch))
-                        {
-                            result.Add(index, ch);
-                        }
-                    }
-                }
+                //        start = Math.Max(1, start);
+                //        end = Math.Min(lastChapterIndex, end);
 
-                return result;
-            }
-        }
+                //        var list = chapters.Where(ch => ch.Id >= start && ch.Id <= end);
+                //        result.AddRange(list);
+                //    }
+                //    else if (int.TryParse(part, out var num))
+                //    {
+                //        var index = Math.Min(lastChapterIndex, num);
+                //        result.Add(chapters[index]);
+                //    }
+                //}
 
-        public void Merge(Novel secondNovelInfo)
-        {
-            URL ??= secondNovelInfo.URL;
-            Name ??= secondNovelInfo.Name;
-            Author ??= secondNovelInfo.Author;
-            Description ??= secondNovelInfo.Description;
-            Cover ??= secondNovelInfo.Cover;
-
-            if (ChaptersByGroup != null && secondNovelInfo.ChaptersByGroup != null)
-            {
-                foreach (var team in secondNovelInfo.ChaptersByGroup)
-                {
-                    if (ChaptersByGroup.TryGetValue(team.Key, out var chapters))
-                    {
-                        foreach (var item in team.Value)
-                        {
-                            if (!chapters.ContainsKey(item.Key))
-                                chapters.Add(item.Key, item.Value);
-                        }
-                    }
-                    else
-                    {
-                        ChaptersByGroup.Add(team.Key, team.Value);
-                    }
-                }
-            }
-            else
-            {
-                ChaptersByGroup ??= secondNovelInfo.ChaptersByGroup;
+                //return result.OrderBy(c => c, new ChaptersComparer()).ToList();
             }
         }
     }

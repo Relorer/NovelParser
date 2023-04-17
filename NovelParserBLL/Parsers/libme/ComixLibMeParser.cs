@@ -14,7 +14,7 @@ using NovelParserBLL.Utilities;
 
 namespace NovelParserBLL.Parsers.LibMe;
 
-internal abstract class ComicsLibMeParser : BaseLibMeParser
+internal abstract class ComicsLibMeParser : BaseLibMeParser, INovelParser
 {
     private record ComicInfo(ComicMediaInfo MediaInfo, ComicPage[] Pages);
     private class ServerWithRate
@@ -40,31 +40,31 @@ internal abstract class ComicsLibMeParser : BaseLibMeParser
         "https://img4.imgslib.link/",
     };
 
-    public override async Task LoadChapters(Novel novel, string group, string pattern, bool includeImages, CancellationToken cancellationToken)
+    public async Task LoadChapters(Novel novel, string group, string pattern, bool includeImages, CancellationToken cancellationToken)
     {
         var parsed = 1;
         var nonLoadedChapters = novel[group, pattern].ForLoad(includeImages);
-        setProgress(nonLoadedChapters.Count, 0, Resources.ProgressStatusParsing);
+        SetProgress(nonLoadedChapters.Count, 0, Resources.ProgressStatusParsing);
         foreach (var item in nonLoadedChapters)
         {
             if (cancellationToken.IsCancellationRequested) return;
             await ParseChapter(novel, item);
-            setProgress(nonLoadedChapters.Count, parsed++, Resources.ProgressStatusParsing);
+            SetProgress(nonLoadedChapters.Count, parsed++, Resources.ProgressStatusParsing);
         }
 
         if (includeImages)
         {
-            var allImages = novel[group, pattern].SelectMany(ch => ch.Value.Images).ToList();
+            var allImages = novel[group, pattern].SelectMany(ch => ch.Images).ToList();
             await DownloadImages(allImages, novel.DownloadFolderName, cancellationToken);
         }
     }
 
-    public override string PrepareUrl(string url)
+    public string PrepareUrl(string url)
     {
         return SiteDomain + Regex.Match(url.Substring(SiteDomain.Length), @"[^(?|\/)]*").Value;
     }
 
-    public override bool ValidateUrl(string url)
+    public bool ValidateUrl(string url)
     {
         return url.Length > SiteDomain.Length && url.StartsWith(SiteDomain) && PrepareUrl(url).Length > SiteDomain.Length;
     }
@@ -78,7 +78,7 @@ internal abstract class ComicsLibMeParser : BaseLibMeParser
         var serversWithRate = Servers.Select(s => new ServerWithRate(s)).ToList();
 
         var batchSize = 10;
-        setProgress(notLoadedImages.Count, 0, Resources.ProgressStatusImageLoading);
+        SetProgress(notLoadedImages.Count, 0, Resources.ProgressStatusImageLoading);
         for (var i = 0; i < notLoadedImages.Count;)
         {
             var batch = notLoadedImages.GetRange(i, Math.Min(batchSize, notLoadedImages.Count - i))
@@ -101,7 +101,7 @@ internal abstract class ComicsLibMeParser : BaseLibMeParser
 
             i += batchSize;
 
-            setProgress(notLoadedImages.Count, i, Resources.ProgressStatusImageLoading);
+            SetProgress(notLoadedImages.Count, i, Resources.ProgressStatusImageLoading);
             batchSize = Math.Min(50, batchSize + 10);
             serversWithRate.Sort((s1, s2) => s2.CountImages - s1.CountImages);
         }

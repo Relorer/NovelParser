@@ -23,6 +23,6 @@ namespace NovelParserBLL.FileGenerators
             Pattern = pattern;
         }
 
-        public SortedList<float, Chapter> Chapters => Novel[Group, Pattern];
+        public List<Chapter> Chapters => Novel[Group, Pattern];
     }
 }

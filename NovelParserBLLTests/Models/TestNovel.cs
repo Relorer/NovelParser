@@ -13,13 +13,13 @@ namespace NovelParserBLLTests.Models
                 Description = "Test",
                 Cover = new ImageInfo("test", ""),
                 Author = "Test",
-                ChaptersByGroup = new Dictionary<string, SortedList<float, Chapter>>()
+                ChaptersByGroup = new Dictionary<string, List<Chapter>>()
                 {
                     {
                         "test",
-                        new SortedList<float, Chapter>()
+                        new List <Chapter>()
                         {
-                            {1, new Chapter() {Name = "Test"} }
+                            {new Chapter() {Name = "Test"} }
                         }
                     }
                 }

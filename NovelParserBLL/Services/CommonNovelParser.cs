@@ -12,9 +12,6 @@ public class CommonNovelParser
     private readonly NovelCacheService novelCacheService;
     private readonly List<INovelParser> novelParsers = new ();
 
-       
-    //ToDo Переделать парсеры
-        
     public CommonNovelParser(NovelCacheService novelCacheService, SetProgress? setProgress = null)
     {
         var webClient = new WebClient();
@@ -48,9 +45,9 @@ public class CommonNovelParser
         var parser = GetParser(novelUrl)!;
         var url = parser.PrepareUrl(novelUrl);
 
-        Novel novel = novelCacheService.TryGetNovelFromFile(url) ?? new Novel() { URL = url };
+        var novel = novelCacheService.TryGetNovelFromFile(url) ?? new Novel { URL = url };
         novel = await parser.ParseCommonInfo(novel, cancellationToken);
-
+        
         novelCacheService.SaveNovelToFile(novel);
 
         return novel;

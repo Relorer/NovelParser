@@ -1,4 +1,5 @@
-﻿using NovelParserBLL.FileGenerators.EPUB.PageModels;
+﻿using NovelParserBLL.Extensions;
+using NovelParserBLL.FileGenerators.EPUB.PageModels;
 using NovelParserBLL.Models;
 
 namespace NovelParserBLL.FileGenerators.EPUB;
@@ -57,19 +58,24 @@ internal class EpubFileGenerator : IFileGenerator<EPUBGenerationParams>
         epubDoc.AddPage("Cover", "Постер", coverPage);
     }
 
-    private async Task AddChapters(EpubDocument epubDoc, SortedList<float, Chapter> chapters)
+    private async Task AddChapters(EpubDocument epubDoc, List<Chapter> chapters)
     {
-        foreach (var chapter in chapters)
+        var volumes = chapters.VolumesCount();
+
+        foreach (var chapter in chapters.SortChapters())
         {
+            var chapNum = (volumes <= 1 ? "" : $"Том {chapter.Volume}, ")
+                            + $"Глава {chapter.Number}";
+
             var page = new ChapterPageModel(_emptyChapterPage, ImagesXhtmlDir)
             {
-                ChapterNumber = $"Глава {chapter.Value.Number}",
-                ChapterTitle = chapter.Value.Name ?? string.Empty,
-                Content = chapter.Value.Content ?? string.Empty,
-                Images = chapter.Value.Images
+                ChapterNumber = chapNum,
+                ChapterTitle = chapter.Name ?? string.Empty,
+                Content = chapter.Content ?? string.Empty,
+                Images = chapter.Images
             };
             var pageContent = await page.GetContent();
-            var pageName = $"chapter_{chapter.Key}";
+            var pageName = $"chapter_v{chapter.Volume}_{chapter.Number}";
             var label = page.ChapterNumber
                         + (string.IsNullOrEmpty(page.ChapterTitle) ? "" : $" - {page.ChapterTitle}");
 

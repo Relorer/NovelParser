@@ -1,4 +1,5 @@
 ﻿using HTMLQuestPDF.Extensions;
+using NovelParserBLL.Extensions;
 using NovelParserBLL.Models;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
@@ -29,12 +30,14 @@ public class PDFFileGenerator : IFileGenerator<PDFGenerationParams>
     {
         var novel = generationParams.Novel;
 
-        var chaptersWithCover = new SortedList<float, Chapter>(generationParams.Chapters);
+        var chaptersWithCover = new List<Chapter>(generationParams.Chapters);
         if (novel.Cover != null)
         {
-            chaptersWithCover.Add(-1, new Chapter
+            chaptersWithCover.Add(new Chapter
             {
                 Name = "Cover",
+                Volume = 0,
+                Number = "0",
                 Content = $"<div><a><img src=\"{novel.Cover.Name}\"/></a></div>",
                 Images = new List<ImageInfo>
                 {
@@ -46,7 +49,7 @@ public class PDFFileGenerator : IFileGenerator<PDFGenerationParams>
         QuestPDF.Settings.CheckIfAllTextGlyphsAreAvailable = false;
         return Document.Create(container =>
         {
-            foreach (var item in chaptersWithCover.Values)
+            foreach (var item in chaptersWithCover.SortChapters())
             {
                 string GetImagePath(string src)
                 {
