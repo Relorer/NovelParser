@@ -1,15 +1,16 @@
 ﻿using NovelParserBLL.Services;
+using NovelParserBLL.Services.Interfaces;
 
-namespace NovelParserBLL.Parsers.libme
+namespace NovelParserBLL.Parsers.LibMe;
+
+internal class YaoiLibMeParser : ComicsLibMeParser
 {
-    internal class YaoiLibMeParser : ComicsLibMeParser
+    public YaoiLibMeParser(SetProgress setProgress, IWebClient webClient) 
+        : base(setProgress, webClient)
     {
-        public YaoiLibMeParser(SetProgress setProgress) : base(setProgress)
-        {
-        }
-
-        public override string SiteDomen => "https://yaoilib.me/";
-
-        public override string SiteName => "YaoiLib.me";
     }
+
+    public override string SiteDomain => "https://yaoilib.me/";
+
+    public override string SiteName => "YaoiLib.me";
 }

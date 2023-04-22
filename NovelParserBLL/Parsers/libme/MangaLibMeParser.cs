@@ -1,15 +1,16 @@
 ﻿using NovelParserBLL.Services;
+using NovelParserBLL.Services.Interfaces;
 
-namespace NovelParserBLL.Parsers.libme
+namespace NovelParserBLL.Parsers.LibMe;
+
+internal class MangaLibMeParser : ComicsLibMeParser
 {
-    internal class MangaLibMeParser : ComicsLibMeParser
+    public MangaLibMeParser(SetProgress setProgress, IWebClient webClient) 
+        : base(setProgress, webClient)
     {
-        public MangaLibMeParser(SetProgress setProgress) : base(setProgress)
-        {
-        }
-
-        public override string SiteDomen => "https://mangalib.me/";
-
-        public override string SiteName => "MangaLib.me";
     }
+
+    public override string SiteDomain => "https://mangalib.me/";
+
+    public override string SiteName => "MangaLib.me";
 }

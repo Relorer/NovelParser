@@ -2,128 +2,194 @@
 using NovelParserBLL.Models;
 using NovelParserBLL.Properties;
 using NovelParserBLL.Services;
-using NovelParserBLL.Services.ChromeDriverHelper;
 using System.Text.RegularExpressions;
+using AngleSharp;
+using AngleSharp.Dom;
+using AngleSharp.Html.Dom;
+using Jint;
+using Newtonsoft.Json;
+using NovelParserBLL.Parsers.DTO;
+using NovelParserBLL.Services.Interfaces;
+using NovelParserBLL.Utilities;
 
-namespace NovelParserBLL.Parsers.libme
+namespace NovelParserBLL.Parsers.LibMe;
+
+internal abstract class ComicsLibMeParser : BaseLibMeParser, INovelParser
 {
-    internal abstract class ComicsLibMeParser : BaseLibMeParser
+    private record ComicInfo(ComicMediaInfo MediaInfo, ComicPage[] Pages);
+    private class ServerWithRate
     {
-        private static readonly string getComicsContentScript = Resources.GetComicsContentScript;
-
-        public ComicsLibMeParser(SetProgress setProgress) : base(setProgress)
+        public ServerWithRate(string server)
         {
+            Server = server;
         }
 
-        protected virtual List<string> servers => new List<string>()
+        public int CountImages { get; set; }
+        public string Server { get; }
+    }
+
+    protected ComicsLibMeParser(SetProgress setProgress, IWebClient webClient) 
+        : base(setProgress, webClient)
+    {
+    }
+
+    protected virtual List<string> Servers => new()
+    {
+        "https://img3.cdnlib.link/",
+        "https://img2.mixlib.me/",
+        "https://img4.imgslib.link/",
+    };
+
+    public async Task LoadChapters(Novel novel, string group, string pattern, bool includeImages, CancellationToken cancellationToken)
+    {
+        var parsed = 1;
+        var nonLoadedChapters = novel[group, pattern].ForLoad(includeImages);
+        SetProgress(nonLoadedChapters.Count, 0, Resources.ProgressStatusParsing);
+        foreach (var item in nonLoadedChapters)
         {
-            "https://img3.cdnlib.link/",
-            "https://img2.mixlib.me/",
-            "https://img4.imgslib.link/",
+            if (cancellationToken.IsCancellationRequested) return;
+            await ParseChapter(novel, item);
+            SetProgress(nonLoadedChapters.Count, parsed++, Resources.ProgressStatusParsing);
+        }
+
+        if (includeImages)
+        {
+            var allImages = novel[group, pattern].SelectMany(ch => ch.Images).ToList();
+            await DownloadImages(allImages, novel.DownloadFolderName, cancellationToken);
+        }
+    }
+
+    public string PrepareUrl(string url)
+    {
+        return SiteDomain + Regex.Match(url.Substring(SiteDomain.Length), @"[^(?|\/)]*").Value;
+    }
+
+    public bool ValidateUrl(string url)
+    {
+        return url.Length > SiteDomain.Length && url.StartsWith(SiteDomain) && PrepareUrl(url).Length > SiteDomain.Length;
+    }
+
+    //todo Возможно, нужно переработать
+    private async Task DownloadImages(IReadOnlyCollection<ImageInfo> images, string downloadFolderName, CancellationToken token)
+    {
+        if (!images.Any()) return;
+
+        var notLoadedImages = images.Where(img => !img.Exists).ToList();
+        var serversWithRate = Servers.Select(s => new ServerWithRate(s)).ToList();
+
+        var batchSize = 10;
+        SetProgress(notLoadedImages.Count, 0, Resources.ProgressStatusImageLoading);
+        for (var i = 0; i < notLoadedImages.Count;)
+        {
+            var batch = notLoadedImages.GetRange(i, Math.Min(batchSize, notLoadedImages.Count - i))
+                .Where(img => !img.Exists).ToList();
+
+            foreach (var server in serversWithRate)
+            {
+                foreach (var imageInfo in batch)
+                {
+                    var fullPath = Path.Combine(downloadFolderName, imageInfo.Name);
+                    var downloadUrl = $"{server.Server + imageInfo.URL}?name={imageInfo.Name}";
+                    await DownloadFileAsync(downloadUrl, fullPath, token);
+                }
+
+                server.CountImages += batch.Count;
+                if (batch.Count == 0) break;
+            }
+
+            if (token.IsCancellationRequested) return;
+
+            i += batchSize;
+
+            SetProgress(notLoadedImages.Count, i, Resources.ProgressStatusImageLoading);
+            batchSize = Math.Min(50, batchSize + 10);
+            serversWithRate.Sort((s1, s2) => s2.CountImages - s1.CountImages);
+        }
+    }
+
+    private async Task ParseChapter(Novel novel, Chapter chapter)
+    {
+        if (string.IsNullOrEmpty(chapter.Url)) return;
+
+        var downloadDir = novel.DownloadFolderName;
+        var pageContent = await GetPageContent(chapter.Url);
+        var pageDoc = await ParseHtmlDocument(pageContent)
+                      ?? throw new ApplicationException("Can't parse page content");
+
+        var chapterDoc = await CreateNewDocumentAsync();
+        if (chapterDoc.Body == null)
+            throw new ApplicationException("Error creating html document.");
+
+        var comicInfo = GetMediaInfo(pageDoc);
+        var baseUrl = GetImagesUrl(comicInfo.MediaInfo);
+
+        foreach (var page in comicInfo.Pages)
+        {
+            var imageRemoteUrl = HtmlPathHelper.Combine(baseUrl,page.Url);
+            var imageInfo = new ImageInfo(downloadDir, imageRemoteUrl);
+            var imageLocalUrl = HtmlPathHelper.Combine(downloadDir, imageInfo.Name);
+            if (!await TryDownloadFileAsync(imageRemoteUrl, imageLocalUrl))
+                continue;
+
+            AddImageToDocument(chapterDoc, imageLocalUrl);
+            chapter.Images.Add(imageInfo);
+        }
+
+        chapter.Content = chapterDoc.Body.InnerHtml;
+        chapter.ImagesLoaded = true;
+    }
+    
+    private static ComicInfo GetMediaInfo(IParentNode doc)
+    {
+        var infoScript = FindScript(doc, "window.__info");
+        var pageScript = FindScript(doc, "window.__pg");
+        
+        var jsEngine = new Engine();
+        jsEngine.Execute("var window = {__pg:{},__DATA__:{},__info:{}};");
+        jsEngine.Execute(infoScript);
+        jsEngine.Execute(pageScript);
+        jsEngine.Execute("var jsonPg = JSON.stringify(window.__pg);var jsonInfo = JSON.stringify(window.__info);");
+        var pageInfoJson = jsEngine.GetValue("jsonPg").AsString();
+        var mediaInfoJson = jsEngine.GetValue("jsonInfo").AsString();
+        
+        var pages = JsonConvert.DeserializeObject<ComicPage[]>(pageInfoJson)
+            ?? Array.Empty<ComicPage>();
+        var mediaInfo = JsonConvert.DeserializeObject<ComicMediaInfo>(mediaInfoJson)
+            ?? throw new ApplicationException("Cannot parse comic.");
+
+        return new ComicInfo(mediaInfo, pages);
+    }
+        
+    private static string GetImagesUrl(ComicMediaInfo mediaInfo)
+    {
+        var server = mediaInfo.img.server switch
+        {
+            "main" => mediaInfo.servers.main,
+            "secondary" => mediaInfo.servers.secondary,
+            "compress" => mediaInfo.servers.compress,
+            "fourth" => mediaInfo.servers.main,
+            _ => throw new ApplicationException("Cannot determine server.")
         };
+        var sitePath = mediaInfo.img.url.Trim('/');
+        var url = HtmlPathHelper.Combine(server, sitePath);
+        return url;
+    }
 
-        public override Task LoadChapters(Novel novel, string group, string pattern, bool includeImages, CancellationToken cancellationToken)
-        {
-            return Task.Run(async () =>
-            {
-                var parsed = 1;
-                var nonLoadedChapters = novel[group, pattern].ForLoad(includeImages);
-                setProgress(nonLoadedChapters.Count, 0, Resources.ProgressStatusParsing);
-                foreach (var item in nonLoadedChapters)
-                {
-                    if (cancellationToken.IsCancellationRequested) return;
-                    await ParseChapter(novel, item);
-                    setProgress(nonLoadedChapters.Count, parsed++, Resources.ProgressStatusParsing);
-                }
+    private static void AddImageToDocument(IDocument document, string source)
+    {
+        if (document.Body == null)
+            throw new ApplicationException("Html document have no body section.");
 
-                if (includeImages)
-                {
-                    var allImages = novel[group, pattern].SelectMany(ch => ch.Value.Images).ToList();
-                    await DownloadImages(allImages, novel.DownloadFolderName, cancellationToken);
-                }
-            });
-        }
+        var div = (IHtmlDivElement)document.CreateElement("div");
+        var image = (IHtmlImageElement)document.CreateElement("img");
+        SetImageSource(image, source);
+        div.AppendChild(image);
+        document.Body.AppendChild(div);
+    }
 
-        public override string PrepareUrl(string url)
-        {
-            return SiteDomen + Regex.Match(url.Substring(SiteDomen.Length), @"[^(?|\/)]*").Value;
-        }
-
-        public override bool ValidateUrl(string url)
-        {
-            return url.Length > SiteDomen.Length && url.StartsWith(SiteDomen) && PrepareUrl(url).Length > SiteDomen.Length;
-        }
-
-        private async Task DownloadImages(List<ImageInfo> images, string downloadFolderName, CancellationToken cancellationToken)
-        {
-            if (!images.Any()) return;
-
-            var notLoadedImages = images.Where(img => !img.Exists).ToList();
-
-            var serversWithRate = servers.Select(s => new ServerWithRate(s)).ToList();
-
-            var batchSize = 10;
-            setProgress(notLoadedImages.Count, 0, Resources.ProgressStatusImageLoading);
-            for (int i = 0; i < notLoadedImages.Count;)
-            {
-                var batch = notLoadedImages.GetRange(i, Math.Min(batchSize, notLoadedImages.Count - i)).Where(img => !img.Exists);
-
-                foreach (var server in serversWithRate)
-                {
-                    var notLoadedImagesURLs = batch.Select(img => $"{server.Server + img.URL}?name={img.Name}").ToArray();
-
-                    using (var driver = await ChromeDriverHelper.TryLoadPage(server.Server, checkChallengeRunningScript, downloadFolderName))
-                    {
-                        driver.ExecuteScript(downloadImagesScript, notLoadedImagesURLs);
-                    }
-
-                    await Task.Delay(2000);
-
-                    var batchCount = batch.Count();
-                    server.CountImages += notLoadedImagesURLs.Count() - batchCount;
-                    if (batchCount == 0) break;
-                }
-
-                if (cancellationToken.IsCancellationRequested) return;
-
-                i += batchSize;
-
-                setProgress(notLoadedImages.Count, i, Resources.ProgressStatusImageLoading);
-                batchSize = Math.Min(50, batchSize + 10);
-                serversWithRate.Sort((s1, s2) => s2.CountImages - s1.CountImages);
-            }
-        }
-
-        private async Task ParseChapter(Novel novel, Chapter chapter)
-        {
-            using (var driver = await ChromeDriverHelper.TryLoadPage(chapter.Url!, checkChallengeRunningScript))
-            {
-                chapter.Content = (string?)driver.ExecuteScript(getComicsContentScript);
-            }
-
-            if (chapter.Content != null && chapter.Content.Contains("img"))
-            {
-                (chapter.Content, chapter.Images) = await htmlHelper.LoadImagesForHTML(chapter.Content, (img) =>
-                {
-                    string url = img.GetAttribute("src") ?? "";
-                    var imageInfo = new ImageInfo(novel.DownloadFolderName, url);
-                    img.SetAttribute("src", imageInfo.Name);
-                    return Task.FromResult(imageInfo);
-                });
-            }
-
-            chapter.ImagesLoaded = true;
-        }
-
-        private class ServerWithRate
-        {
-            public ServerWithRate(string server)
-            {
-                Server = server;
-            }
-
-            public int CountImages { get; set; }
-            public string Server { get; }
-        }
+    private static Task<IDocument> CreateNewDocumentAsync()
+    {
+        var context = new BrowsingContext();
+        return context.OpenNewAsync();
     }
 }

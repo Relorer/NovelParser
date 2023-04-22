@@ -6,10 +6,8 @@ using NovelParserBLL.FileGenerators.PDF;
 using NovelParserBLL.Models;
 using NovelParserBLL.Parsers;
 using NovelParserBLL.Services;
-using NovelParserBLL.Services.ChromeDriverHelper;
 using NovelParserWPF.DialogWindows;
 using NovelParserWPF.Utilities;
-using OpenQA.Selenium.Chrome;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -19,6 +17,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
+using NovelParserBLL.Extensions;
 
 namespace NovelParserWPF.ViewModels
 {
@@ -38,12 +37,12 @@ namespace NovelParserWPF.ViewModels
             ParserInfos = commonNovelParser.ParserInfos;
 
             FileFormatsForGenerator = new List<RadioButton>() {
-                new RadioButton() {
+                new RadioButton {
                     GroupName = nameof(FileFormatsForGenerator),
                     Content = FileFormat.EPUB,
                     IsChecked = true
                 },
-                new RadioButton() {
+                new RadioButton {
                     GroupName = nameof(FileFormatsForGenerator),
                     Content = FileFormat.PDF,
                 }
@@ -57,10 +56,10 @@ namespace NovelParserWPF.ViewModels
         public List<string> TranslationTeams => Novel?.ChaptersByGroup?.Keys.ToList() ?? new List<string>();
 
         public int TotalChapters => chaptersCurrentTeam?.Count ?? 0;
+        public int TotalVolumes => chaptersCurrentTeam?.VolumesCount() ?? 0;
+        private List<Chapter>? chaptersCurrentTeam => Novel?[SelectedTranslationTeam, "all"];
 
-        private SortedList<int, Chapter>? chaptersCurrentTeam => Novel?[SelectedTranslationTeam, "all"];
-
-        public SortedList<int, Chapter>? ChaptersToDownload => Novel?[SelectedTranslationTeam, ListChaptersPattern];
+        public List<Chapter>? ChaptersToDownload => Novel?[SelectedTranslationTeam, ListChaptersPattern];
 
         public BitmapImage? Cover => Novel?.Cover?.TryGetByteArray(out byte[]? cover) ?? false ? ImageHelper.BitmapImageFromBuffer(cover!) : null;
 
@@ -126,19 +125,18 @@ namespace NovelParserWPF.ViewModels
                 {
                     cancellationTokenSource?.Cancel();
                     ProgressButtonText = "Canceling";
-                    if (loadingTask == null || loadingTask.Status > TaskStatus.WaitingForChildrenToComplete)
-                    {
-                        cancellationTokenSource?.Dispose();
-                        isLoadingProgressButton = false;
-                        ProgressButtonText = Novel == null ? "Get" : "Start";
-                    }
+                    if (loadingTask != null && loadingTask.Status <= TaskStatus.WaitingForChildrenToComplete) 
+                        return;
+                    cancellationTokenSource?.Dispose();
+                    isLoadingProgressButton = false;
+                    ProgressButtonText = Novel == null ? "Get" : "Start";
                 }
                 else if (value)
                 {
                     isLoadingProgressButton = true;
                     cancellationTokenSource = new CancellationTokenSource();
                     loadingTask = StartButtonClick(cancellationTokenSource.Token);
-                    loadingTask.ContinueWith((_) =>
+                    loadingTask.ContinueWith( _ =>
                     {
                         IsLoadingProgressButton = false;
                     });
@@ -152,8 +150,6 @@ namespace NovelParserWPF.ViewModels
 
             try
             {
-                TryCloseAuthDriver();
-
                 if (Novel == null)
                 {
                     await GetNovelInfo(cancellationToken);
@@ -177,7 +173,7 @@ namespace NovelParserWPF.ViewModels
             Novel = await commonNovelParser.ParseCommonInfo(NovelLink, cancellationToken);
             if (Novel != null && !string.IsNullOrEmpty(Novel.Name))
             {
-                string desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                var desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
                 SavePath = Path.Combine(desktop, NovelParserBLL.Utilities.FileHelper.RemoveInvalidFilePathCharacters(Novel.Name));
                 SelectedTranslationTeam = TranslationTeams.First();
             }
@@ -231,19 +227,16 @@ namespace NovelParserWPF.ViewModels
         public bool UseCookies
         {
             get => bool.Parse(ConfigurationManager.AppSettings["UseCookies"] ?? "false");
-            set
-            {
-                SettingsHelper.AddOrUpdateAppSettings("UseCookies", value.ToString());
-            }
+            set => SettingsHelper.AddOrUpdateAppSettings("UseCookies", value.ToString());
         }
 
-        private ChromeDriver? authDriver;
+        //private ChromeDriver? authDriver;
 
         [GenerateCommand]
         private void OpenAuthClick(string url)
         {
-            TryCloseAuthDriver();
-            authDriver = ChromeDriverHelper.OpenPageWithAutoClose(url);
+            //TryCloseAuthDriver();
+            //authDriver = ChromeDriverHelper.OpenPageWithAutoClose(url);
         }
 
         private bool CanOpenAuthClick(string url) => UseCookies;
@@ -251,17 +244,17 @@ namespace NovelParserWPF.ViewModels
         [GenerateCommand]
         private void ClearCookiesClick()
         {
-            TryCloseAuthDriver();
-            ChromeDriverHelper.ClearCookies();
+            //TryCloseAuthDriver();
+            //ChromeDriverHelper.ClearCookies();
         }
 
         private bool CanClearCookiesClick() => UseCookies;
 
-        private void TryCloseAuthDriver()
-        {
-            authDriver?.Dispose();
-            authDriver = null;
-        }
+        //private void TryCloseAuthDriver()
+        //{
+        //    authDriver?.Dispose();
+        //    authDriver = null;
+        //}
 
         #endregion CookiesSettings
 
@@ -276,7 +269,7 @@ namespace NovelParserWPF.ViewModels
         [GenerateCommand]
         private void CloseSettingsHandler()
         {
-            TryCloseAuthDriver();
+            //TryCloseAuthDriver();
         }
 
         #endregion CloseSettings
@@ -286,7 +279,7 @@ namespace NovelParserWPF.ViewModels
         [GenerateCommand]
         private void CloseWindowHandler()
         {
-            TryCloseAuthDriver();
+            //TryCloseAuthDriver();
             cancellationTokenSource?.Dispose();
         }
 

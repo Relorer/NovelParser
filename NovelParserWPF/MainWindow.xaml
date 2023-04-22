@@ -8,6 +8,7 @@
     xmlns:hc="https://handyorg.github.io/handycontrol"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="clr-namespace:NovelParserWPF.ViewModels"
+    xmlns:conv="clr-namespace:NovelParserWPF.Converters"
     x:Name="WindowMain"
     Title="NovelParser"
     Width="850"
@@ -15,7 +16,12 @@
     MinWidth="800"
     MinHeight="400"
     WindowStartupLocation="CenterScreen"
+    d:DataContext="{d:DesignInstance IsDesignTimeCreatable = False, Type = vm:MainWindowViewModel}"
     mc:Ignorable="d">
+    
+    <Window.Resources>
+        <conv:AuthPageToVisibilityConverter x:Key="AuthPageToVisibilityConverter"/>
+    </Window.Resources>
 
     <Behaviors:Interaction.Triggers>
         <Behaviors:EventTrigger EventName="Closed" SourceObject="{Binding ElementName=WindowMain}">
@@ -26,10 +32,6 @@
             <Behaviors:InvokeCommandAction Command="{Binding CloseSettingsHandlerCommand}" />
         </Behaviors:EventTrigger>
     </Behaviors:Interaction.Triggers>
-
-    <Window.DataContext>
-        <vm:MainWindowViewModel />
-    </Window.DataContext>
 
     <hc:SimplePanel>
 
@@ -61,8 +63,7 @@
                                         Content="{Binding Path=SiteName}"
                                         IsEnabled="{c:Binding Source={x:Reference Name=WindowMain},
                                                               Path=!DataContext.IsLoadingProgressButton}"
-                                        Visibility="{c:Binding 'AuthPage != \'\'',
-                                                               FalseToVisibility=Collapsed}" />
+                                        Visibility="{Binding AuthPage, Converter={StaticResource AuthPageToVisibilityConverter}}" />
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
@@ -95,7 +96,6 @@
             <DockPanel Margin="12" LastChildFill="True">
 
                 <DockPanel DockPanel.Dock="Bottom" LastChildFill="True">
-
                     <ToggleButton
                         hc:IconElement.Geometry="{StaticResource ConfigGeometry}"
                         DockPanel.Dock="Left"
@@ -194,7 +194,7 @@
                                         Margin="5"
                                         HorizontalAlignment="Stretch"
                                         Command="{Binding ElementName=WindowMain, Path=DataContext.OpenSiteOfParserCommand}"
-                                        CommandParameter="{Binding Path=SiteDomen}"
+                                        CommandParameter="{Binding Path=SiteDomain}"
                                         Content="{Binding Path=SiteName}" />
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
@@ -263,7 +263,7 @@
                             Margin="5"
                             HorizontalAlignment="Center"
                             Style="{StaticResource TextBlockTitle}"
-                            Text="Relorer" />
+                            Text="Relorer &amp; Samael" />
                     </StackPanel>
 
                     <hc:ScrollViewer IsInertiaEnabled="True" Visibility="{c:Binding 'Novel != null', FalseToVisibility=Collapsed}">
@@ -290,32 +290,65 @@
                                         TextTrimming="CharacterEllipsis" />
                                 </StackPanel>
                                 <StackPanel>
-                                    <TextBlock
-                                        Margin="5"
-                                        HorizontalAlignment="Left"
-                                        Style="{StaticResource TextBlockDefault}"
-                                        Text="{c:Binding (\'File path: \' + SavePath)}"
-                                        TextTrimming="CharacterEllipsis"
-                                        ToolTip="{c:Binding (\'File path: \' + SavePath)}" />
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <TextBlock
+                                            HorizontalAlignment="Left"
+                                            Style="{StaticResource TextBlockDefault}"
+                                            Text="File path: "/>
+                                        <TextBlock
+                                            HorizontalAlignment="Left"
+                                            Style="{StaticResource TextBlockDefault}"
+                                            Text="{Binding SavePath}"
+                                            TextTrimming="CharacterEllipsis"/>
+                                    </StackPanel>
+                                    
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <TextBlock
+                                            HorizontalAlignment="Left"
+                                            Style="{StaticResource TextBlockDefault}"
+                                            Text="File name: "/>
+                                        <TextBlock
+                                            HorizontalAlignment="Left"
+                                            Style="{StaticResource TextBlockDefault}"
+                                            Text="{Binding FileName}"
+                                            TextTrimming="CharacterEllipsis"/>
+                                    </StackPanel>
+                                    
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <TextBlock
+                                            HorizontalAlignment="Left"
+                                            Style="{StaticResource TextBlockDefault}"
+                                            Text="Total volumes: "/>
+                                        <TextBlock
+                                            HorizontalAlignment="Left"
+                                            Style="{StaticResource TextBlockDefault}"
+                                            Text="{Binding TotalVolumes}"
+                                            TextTrimming="CharacterEllipsis"/>
+                                    </StackPanel>
 
-                                    <TextBlock
-                                        Margin="5"
-                                        HorizontalAlignment="Left"
-                                        Style="{StaticResource TextBlockDefault}"
-                                        Text="{c:Binding (\'File name: \' + FileName)}"
-                                        TextTrimming="CharacterEllipsis" />
-
-                                    <TextBlock
-                                        Margin="5"
-                                        HorizontalAlignment="Left"
-                                        Style="{StaticResource TextBlockDefault}"
-                                        Text="{c:Binding (\'Total chapters: \' + TotalChapters)}" />
-
-                                    <TextBlock
-                                        Margin="5"
-                                        HorizontalAlignment="Left"
-                                        Style="{StaticResource TextBlockDefault}"
-                                        Text="{c:Binding (\'Chapters to download: \' + ChaptersToDownload.Count)}" />
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <TextBlock
+                                            HorizontalAlignment="Left"
+                                            Style="{StaticResource TextBlockDefault}"
+                                            Text="Total chapters: "/>
+                                        <TextBlock
+                                            HorizontalAlignment="Left"
+                                            Style="{StaticResource TextBlockDefault}"
+                                            Text="{Binding TotalChapters}"
+                                            TextTrimming="CharacterEllipsis"/>
+                                    </StackPanel>
+                                    
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <TextBlock
+                                            HorizontalAlignment="Left"
+                                            Style="{StaticResource TextBlockDefault}"
+                                            Text="Chapters to download: "/>
+                                        <TextBlock
+                                            HorizontalAlignment="Left"
+                                            Style="{StaticResource TextBlockDefault}"
+                                            Text="{Binding ChaptersToDownload.Count}"
+                                            TextTrimming="CharacterEllipsis"/>
+                                    </StackPanel>
                                 </StackPanel>
                             </DockPanel>
 

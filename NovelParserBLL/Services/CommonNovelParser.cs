@@ -1,71 +1,65 @@
 ﻿using NovelParserBLL.Models;
 using NovelParserBLL.Parsers;
 using NovelParserBLL.Parsers.kemono;
-using NovelParserBLL.Parsers.libme;
+using NovelParserBLL.Parsers.LibMe;
 
-namespace NovelParserBLL.Services
+namespace NovelParserBLL.Services;
+
+public delegate void SetProgress(int total, int current, string status);
+
+public class CommonNovelParser
 {
-    public delegate void SetProgress(int total, int current, string status);
+    private readonly NovelCacheService novelCacheService;
+    private readonly List<INovelParser> novelParsers = new ();
 
-    public class CommonNovelParser
+    public CommonNovelParser(NovelCacheService novelCacheService, SetProgress? setProgress = null)
     {
-        private readonly NovelCacheService novelCacheService;
-        private readonly SetProgress setProgress;
-        private readonly List<INovelParser> novelParsers = new List<INovelParser>();
+        var webClient = new WebClient();
+            
+        this.novelCacheService = novelCacheService;
+        var setProgressAction = setProgress ?? ((int _, int _, string _) => { });
 
-        public CommonNovelParser(NovelCacheService novelCacheService, SetProgress? setProgress = null)
+        novelParsers.Add(new RanobeLibMeParser(setProgressAction, webClient));
+        novelParsers.Add(new KemonoParser(setProgressAction, webClient));
+        novelParsers.Add(new MangaLibMeParser(setProgressAction, webClient));
+        novelParsers.Add(new HentaiLibMeParser(setProgressAction, webClient));
+        novelParsers.Add(new YaoiLibMeParser(setProgressAction, webClient));
+    }
+
+    public List<ParserInfo> ParserInfos => novelParsers.Select(p => p.ParserInfo).ToList();
+
+    public async Task LoadChapters(Novel novel, string group, string pattern, bool includeImages, CancellationToken cancellationToken)
+    {
+        try
         {
-            this.novelCacheService = novelCacheService;
-
-            this.setProgress = setProgress ?? ((int _, int _, string _) => { });
-
-            novelParsers.Add(new RanobeLibMeParser(this.setProgress));
-            novelParsers.Add(new MangaLibMeParser(this.setProgress));
-            novelParsers.Add(new HentaiLibMeParser(this.setProgress));
-            novelParsers.Add(new YaoiLibMeParser(this.setProgress));
-            novelParsers.Add(new KemonoParser(this.setProgress));
+            await GetParser(novel.URL!)!.LoadChapters(novel, group, pattern, includeImages, cancellationToken);
         }
-
-        public List<ParserInfo> ParserInfos => novelParsers.Select(p => p.ParserInfo).ToList();
-
-        public async Task LoadChapters(Novel novel, string group, string pattern, bool includeImages, CancellationToken cancellationToken)
+        finally
         {
-            try
-            {
-                await GetParser(novel.URL!)!.LoadChapters(novel, group, pattern, includeImages, cancellationToken);
-            }
-            finally
-            {
-                novelCacheService.SaveNovelToFile(novel);
-            }
-        }
-
-        public async Task<Novel> ParseCommonInfo(string novelUrl, CancellationToken cancellationToken)
-        {
-            var parser = GetParser(novelUrl)!;
-            var url = parser.PrepareUrl(novelUrl);
-
-            Novel novel = novelCacheService.TryGetNovelFromFile(url) ?? new Novel() { URL = url };
-            novel = await parser.ParseCommonInfo(novel, cancellationToken);
-
             novelCacheService.SaveNovelToFile(novel);
-
-            return novel;
         }
+    }
 
-        public bool ValidateUrl(string url)
-        {
-            return !string.IsNullOrEmpty(url) && GetParser(url) != null;
-        }
+    public async Task<Novel> ParseCommonInfo(string novelUrl, CancellationToken cancellationToken)
+    {
+        var parser = GetParser(novelUrl)!;
+        var url = parser.PrepareUrl(novelUrl);
 
-        private INovelParser? GetParser(string url)
-        {
-            foreach (var item in novelParsers)
-            {
-                if (item.ValidateUrl(url)) return item;
-            }
+        var novel = novelCacheService.TryGetNovelFromFile(url) ?? new Novel { URL = url };
+        novel = await parser.ParseCommonInfo(novel, cancellationToken);
+        
+        novelCacheService.SaveNovelToFile(novel);
 
-            return null;
-        }
+        return novel;
+    }
+
+    public bool ValidateUrl(string url)
+    {
+        return !string.IsNullOrEmpty(url) && GetParser(url) != null;
+    }
+
+    private INovelParser? GetParser(string url)
+    {
+        return novelParsers.FirstOrDefault(item => item.ValidateUrl(url));
     }
 }

@@ -9,9 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NovelParserWPF", "NovelPars
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NovelParserBLLTests", "NovelParserBLLTests\NovelParserBLLTests.csproj", "{77CC6381-193E-4EEB-8CAC-9C2CB5B1AB63}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExampleUsingPDFFileGenerator", "ExampleUsingPDFFileGenerator\ExampleUsingPDFFileGenerator.csproj", "{9859CE98-B647-41A1-86DA-91505E03F62B}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HTMLQuestPDF", "HTMLQuestPDF\HTMLQuestPDF.csproj", "{4A990109-E829-46A3-8559-F8DE7771BE4D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HTMLQuestPDF", "HTMLQuestPDF\HTMLQuestPDF.csproj", "{4A990109-E829-46A3-8559-F8DE7771BE4D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,10 +29,6 @@ Global
 		{77CC6381-193E-4EEB-8CAC-9C2CB5B1AB63}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{77CC6381-193E-4EEB-8CAC-9C2CB5B1AB63}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{77CC6381-193E-4EEB-8CAC-9C2CB5B1AB63}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9859CE98-B647-41A1-86DA-91505E03F62B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9859CE98-B647-41A1-86DA-91505E03F62B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9859CE98-B647-41A1-86DA-91505E03F62B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9859CE98-B647-41A1-86DA-91505E03F62B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4A990109-E829-46A3-8559-F8DE7771BE4D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4A990109-E829-46A3-8559-F8DE7771BE4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4A990109-E829-46A3-8559-F8DE7771BE4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
